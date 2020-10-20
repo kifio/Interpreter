@@ -1,5 +1,6 @@
 public class Interpreter {
-    public String getFoo() {
-        return "foo";
+
+    public InterpreterOutput interpret(String code) {
+        return new InterpreterOutput();
     }
 }
