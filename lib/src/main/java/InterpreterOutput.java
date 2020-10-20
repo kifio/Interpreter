@@ -1,7 +1,13 @@
+import java.util.List;
+
 public class InterpreterOutput {
 
-    public String output;
+    public final String output;
 
-    public String[] errors;
+    public final String errors;
 
+    InterpreterOutput(List<String> output, List<String> errors) {
+        this.output = String.join("\n", output);
+        this.errors = String.join("\n", errors);
+    }
 }
