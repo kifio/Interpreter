@@ -12,6 +12,6 @@ public class InterpreterTest {
                 "out count";
         InterpreterOutput interpreterOutput = interpreter.interpret(code);
         Assertions.assertEquals(interpreterOutput.output, String.valueOf(number));
-        Assertions.assertNull(interpreterOutput.errors);
+        Assertions.assertTrue(interpreterOutput.errors.isEmpty());
     }
 }
