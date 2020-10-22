@@ -24,11 +24,13 @@ public class Calculator {
     }
 
     String convert(String expression) {
-        String[] tokens = expression.split(Constants.SPACE);
+
+        String[] tokens = Utils.getStringWithSpaces(expression).split(Constants.SPACE);
         StringBuilder result = new StringBuilder();
         ArrayList<String> operators = new ArrayList<>();
 
-        for (String token : tokens) {
+        for (String t : tokens) {
+            String token = t.trim();
             if (Utils.isNumber(token)) {
                 result.append(token);
                 result.append(Constants.SPACE);
