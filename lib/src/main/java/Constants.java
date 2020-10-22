@@ -4,6 +4,7 @@ interface Constants {
     static final String VARIABLE = "var";
     static final String PRINT = "print";
     static final String OUT = "out";
+    // TODO: add map and reduce
 
     // Separators
     static final String SPACE = " ";
@@ -25,6 +26,8 @@ interface Constants {
     static final String MULTIPLY = "*";
     static final String DIVIDE = "/";
     static final String POW = "^";
+    static final String OPENING_BRACKET = "(";
+    static final String CLOSING_BRACKET = ")";
 
     static final String[] SYMBOLS = {
             ASSIGN,

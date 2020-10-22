@@ -2,7 +2,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
-import java.util.Stack;
 
 public class Interpreter {
 
@@ -90,6 +89,10 @@ public class Interpreter {
     private void processLine(String line) {
         String[] tokens = getFormattedLine(line).trim().split(" +");
         for (String token : tokens) {
+            if (token.isEmpty()) {
+                continue;
+            }
+
             if (!handleToken(token)) {
                 errors.add("error token: " + token);
             }
@@ -115,16 +118,7 @@ public class Interpreter {
                     return false;
                 }
             case DETERMINE_VARIABLE_TYPE:
-                if (token.equals(Constants.START_SEQUENCE)) {
-                    previousState = State.DETERMINE_VARIABLE_TYPE;
-                    currentState = State.READ_SEQUENCE;
-                    sequences.put(currentVariableName, new ArrayList<>());
-                    return true;
-                } else {
-                    previousState = State.DETERMINE_VARIABLE_TYPE;
-                    currentState = State.READ_EXPRESSION;
-                    return readExpression(token);
-                }
+                return determineVariableType(token);
             case READ_EXPRESSION:
                 return readExpression(token);
             case READ_SEQUENCE:
@@ -146,13 +140,25 @@ public class Interpreter {
         }
     }
 
+    private boolean determineVariableType(String token) {
+        previousState = State.DETERMINE_VARIABLE_TYPE;
+        if (token.equals(Constants.START_SEQUENCE)) {
+            currentState = State.READ_SEQUENCE;
+            sequences.put(currentVariableName, new ArrayList<>());
+            return true;
+        } else {
+            currentState = State.READ_EXPRESSION;
+            return readExpression(token);
+        }
+    }
+
     private boolean readExpression(String token) {
         String str = token;
         if (numbers.containsKey(str)) {
             str = numbers.get(token);
         }
 
-        if (isSign(str) || isNumeric(str)) {
+        if (Utils.isSign(str) || Utils.isNumber(str)) {
             currentExpression.append(str);
             return true;
         } else if (previousState == State.DETERMINE_VARIABLE_TYPE && str.equals(Constants.NEW_LINE)) {
@@ -214,25 +220,5 @@ public class Interpreter {
         }
 
         return true;
-    }
-
-    private boolean isNumeric(String strNum) {
-        if (strNum == null) {
-            return false;
-        }
-        try {
-            double d = Double.parseDouble(strNum);
-        } catch (NumberFormatException nfe) {
-            return false;
-        }
-        return true;
-    }
-
-    private boolean isSign(String token) {
-        return token.equals(Constants.PLUS) ||
-                token.equals(Constants.MINUS) ||
-                token.equals(Constants.MULTIPLY) ||
-                token.equals(Constants.DIVIDE) ||
-                token.equals(Constants.POW);
     }
 }
