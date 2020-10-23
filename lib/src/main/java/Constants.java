@@ -4,18 +4,13 @@ interface Constants {
     static final String VARIABLE = "var";
     static final String PRINT = "print";
     static final String OUT = "out";
-    // TODO: add map and reduce
+    static final String MAP = "map";
+    static final String REDUCE = "reduce";
 
     // Separators
     static final String SPACE = " ";
     static final String NEW_LINE = "\n";
     static final String COMMA = ",";
-
-    static final String[] SEPARATORS = {
-            SPACE,
-            NEW_LINE,
-            COMMA
-    };
 
     // Symbols
     static final String ASSIGN = "=";
@@ -38,6 +33,8 @@ interface Constants {
             MINUS,
             MULTIPLY,
             DIVIDE,
-            POW
+            POW,
+            OPENING_BRACKET,
+            CLOSING_BRACKET
     };
 }

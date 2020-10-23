@@ -1,8 +1,21 @@
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
 
 public class Interpreter {
+
+    public static class Output {
+
+        public final String output;
+
+        public final String errors;
+
+        Output(List<String> output, List<String> errors) {
+            this.output = String.join("\n", output);
+            this.errors = String.join("\n", errors);
+        }
+    }
 
     // States of interpreter.
     private enum State {
@@ -13,6 +26,10 @@ public class Interpreter {
         // After reading keyword 'var' and before '=' sign.
         // Available from UNDEFINED state.
         READ_VARIABLE_NAME,
+
+        // After reading variable name and before starting determination of value type.
+        // Available from READ_VARIABLE_NAME state.
+        READ_ASSIGN_SYMBOL,
 
         // After '=' sign before determination of value type (expression or sequence).
         // Available from READ_VARIABLE_NAME state.
@@ -40,7 +57,7 @@ public class Interpreter {
         // Available from UNDEFINED, READ_PRINT states.
         // In case of UNDEFINED, constant is ignored.
         // In case of READ_PRINT, add to output list.
-        READ_STRING_CONSTANT
+        PRINT_STRING_CONSTANT
 
         // TODO: add MAP, REDUCE, states
     }
@@ -53,13 +70,14 @@ public class Interpreter {
 
     private final StringBuilder currentExpression = new StringBuilder();
     private final StringBuilder currentSequence = new StringBuilder();
+    private final StringBuilder currentStringConstant = new StringBuilder();
     private final Calculator calculator = new Calculator();
 
     private String currentVariableName = null;
     private State currentState = State.UNDEFINED;
     private State previousState = State.UNDEFINED;
 
-    public InterpreterOutput interpret(String code) {
+    public Interpreter.Output interpret(String code) {
         Scanner scanner = new Scanner(code);
 
         while (scanner.hasNextLine()) {
@@ -68,7 +86,7 @@ public class Interpreter {
         }
 
         scanner.close();
-        return new InterpreterOutput(output, errors);
+        return new Interpreter.Output(output, errors);
     }
 
     private void processLine(String line) {
@@ -97,24 +115,17 @@ public class Interpreter {
             case UNDEFINED:
                 return handleTokenInUndefinedState(token);
             case READ_VARIABLE_NAME:
-                if (isValidVariableName(token)) {
-                    currentVariableName = token;
-                    return true;
-                    // TODO: make separated state for assign
-                } else if (token.equals(Constants.ASSIGN)) {
-                    previousState = State.READ_VARIABLE_NAME;
-                    currentState = State.DETERMINE_VARIABLE_TYPE;
-                    return true;
-                } else {
-                    errors.add("Sequence or number should be assigned to variable");
-                    return false;
-                }
+                return handleVariableName(token);
+            case READ_ASSIGN_SYMBOL:
+                return handleAssignSymbol(token);
             case DETERMINE_VARIABLE_TYPE:
                 return determineVariableType(token);
             case READ_EXPRESSION:
                 return readExpression(token);
             case READ_SEQUENCE:
                 return readSequence(token);
+            case PRINT_STRING_CONSTANT:
+                return addConstantToOutput(token);
             case READ_OUT:
                 previousState = State.READ_OUT;
 
@@ -123,12 +134,43 @@ public class Interpreter {
                     readExpression(token);
                 } else if (sequences.containsKey(token)) {
                     currentState = State.UNDEFINED;
-//                    output.add(String.join("", sequences.get(token)));
+                    output.add(sequenceToString(sequences.get(token)));
+                } else {
+                    errors.add("Invalid symbol in output");
+                    return false;
                 }
 
+                return true;
             default:
                 return false;
         }
+    }
+
+    private boolean handleVariableName(String token) {
+        if (isValidVariableName(token)) {
+            currentVariableName = token;
+            currentState = State.READ_ASSIGN_SYMBOL;
+            return true;
+        } else {
+            errors.add("Valid name for variable expected");
+            return false;
+        }
+    }
+
+    private boolean handleAssignSymbol(String token) {
+        if (token.equals(Constants.ASSIGN)) {
+            previousState = State.READ_VARIABLE_NAME;
+            currentState = State.DETERMINE_VARIABLE_TYPE;
+            return true;
+        } else {
+            errors.add("Sequence or number should be assigned to variable");
+            return false;
+        }
+    }
+
+    private boolean addConstantToOutput(String token) {
+        currentStringConstant.append(token).append(Constants.SPACE);
+        return true;
     }
 
     private boolean readSequence(String token) {
@@ -137,10 +179,14 @@ public class Interpreter {
             return true;
         } else {
             int[] formattedSequence = formatCurrentSequence();
-            if (formattedSequence != null) {
+            boolean isSequenceValid = formattedSequence != null;
+
+            if (isSequenceValid) {
                 sequences.put(currentVariableName, formattedSequence);
             }
+
             currentVariableName = null;
+            return isSequenceValid;
         }
     }
 
@@ -176,7 +222,7 @@ public class Interpreter {
         previousState = State.DETERMINE_VARIABLE_TYPE;
         if (token.equals(Constants.START_SEQUENCE)) {
             currentState = State.READ_SEQUENCE;
-            sequences.put(currentVariableName, new ArrayList<>());
+//            sequences.put(currentVariableName, new ArrayList<>());
             return true;
         } else {
             currentState = State.READ_EXPRESSION;
@@ -201,10 +247,18 @@ public class Interpreter {
 
     private void completeCurrentLine() {
         if (previousState == State.DETERMINE_VARIABLE_TYPE) {
-            numbers.put(currentVariableName, calcCurrentExpression());
-            currentVariableName = null;
+            if (currentState == State.READ_EXPRESSION) {
+                numbers.put(currentVariableName, calcCurrentExpression());
+                currentVariableName = null;
+            }
         } else if (previousState == State.READ_OUT) {
-            output.add(calcCurrentExpression());
+            if (currentState == State.READ_EXPRESSION) {
+                output.add(calcCurrentExpression());
+            }
+        } else if (previousState == State.UNDEFINED &&
+                    currentState == State.PRINT_STRING_CONSTANT) {
+            output.add(currentStringConstant.toString().trim());
+            currentStringConstant.setLength(0);
         }
     }
 
@@ -221,7 +275,7 @@ public class Interpreter {
             currentState = State.READ_VARIABLE_NAME;
         } else if (token.equals(Constants.PRINT)) {
             previousState = State.UNDEFINED;
-            currentState = State.READ_STRING_CONSTANT;
+            currentState = State.PRINT_STRING_CONSTANT;
         } else if (token.equals(Constants.OUT)) {
             previousState = State.UNDEFINED;
             currentState = State.READ_OUT;
@@ -249,5 +303,9 @@ public class Interpreter {
         }
 
         return true;
+    }
+
+    private String sequenceToString(int[] seq) {
+        return seq[0] + Constants.COMMA + seq[1];
     }
 }

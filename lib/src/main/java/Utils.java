@@ -11,24 +11,14 @@ public class Utils {
         return true;
     }
 
-    static boolean isInteger(String strNum) {
-        if (strNum == null) {
-            return false;
-        }
-        try {
-            Integer.parseInt(strNum);
-        } catch (NumberFormatException nfe) {
-            return false;
-        }
-        return true;
-    }
-
     static boolean isSign(String token) {
         return token.equals(Constants.PLUS) ||
                 token.equals(Constants.MINUS) ||
                 token.equals(Constants.MULTIPLY) ||
                 token.equals(Constants.DIVIDE) ||
-                token.equals(Constants.POW);
+                token.equals(Constants.POW) ||
+                token.equals(Constants.OPENING_BRACKET) ||
+                token.equals(Constants.CLOSING_BRACKET);
     }
 
     static String getStringWithSpaces(String line) {
