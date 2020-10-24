@@ -3,75 +3,91 @@ package reader;
 import calculator.Calculator;
 import formatter.Formatter;
 import formatter.SequenceParserResult;
+import tools.Constants;
 import tools.Validator;
 
 import java.util.ArrayList;
 
 public class MapReader extends FuncReader<double[]> {
 
-    private final Calculator calculator;
-
-    private double[] srcSequence;
-
-    private String lambdaVariableName;
-    private String lambdaExpression;
-
-    public MapReader(Calculator calculator) {
-        this.calculator = calculator;
+    public MapReader(Calculator calculator, SequenceProvider sequenceProvider) {
+        super(calculator, sequenceProvider);
     }
 
     @Override
-    boolean validate(String[] tokens) {
-        if (tokens.length != 2) {
+    public boolean validate() {
+        String str = Formatter.getStringWithSpaces(functionParameters.toString()).trim();
+        String[] tokens = new String[2];
+
+        int separatorIndex = str.lastIndexOf(Constants.COMMA);
+
+        if (separatorIndex == -1) {
             appendError("Map required two arguments: sequence and lambda");
             return false;
         }
 
-        if (Validator.isValidVariableName(tokens[0])) {
-            sequenceVariableName = tokens[0];
-        } else {
-            SequenceParserResult sequenceParserResult = Formatter.formatSequence(calculator, tokens[0]);
+        tokens[0] = str.substring(1, separatorIndex)
+                .replace(Constants.START_SEQUENCE, Constants.SPACE)
+                .replace(Constants.END_SEQUENCE, Constants.SPACE)
+                .trim();
 
-            boolean isSequenceValid = sequenceParserResult.sequence != null
-                    && sequenceParserResult.errors.isEmpty();
+        tokens[1] = str.substring(separatorIndex + 1, str.length() - 2)
+                .replace("- >", "->")
+                .trim();
 
-            if (isSequenceValid) {
-                this.srcSequence = sequenceParserResult.sequence;
-            } else {
-                for (String err : sequenceParserResult.errors) {
-                    appendError(err);
-                }
-                return false;
-            }
-
-            return true;
+        if (Validator.variableExists(tokens[0])) {
+            sequence = sequenceProvider.getSequenceByName(tokens[0]);
+        } else if (!handleSequence(tokens[0])) {
+            return false;
         }
 
         return parseLambda(tokens[1]);
     }
 
+    private boolean handleSequence(String sequence) {
+        SequenceParserResult sequenceParserResult = Formatter.formatSequence(calculator, sequence);
+
+        boolean isSequenceValid = sequenceParserResult.sequence != null
+                && sequenceParserResult.errors.isEmpty();
+
+        if (isSequenceValid) {
+            this.sequence = sequenceParserResult.sequence;
+        } else {
+            for (String err : sequenceParserResult.errors) {
+                appendError(err);
+            }
+            return false;
+        }
+
+        return true;
+    }
+
     @Override
-    double[] compute() {
-        for (int i = 0; i < srcSequence.length; i++) {
-            srcSequence[i] = calculator.calc(
+    public double[] compute() {
+        for (int i = 0; i < sequence.length; i++) {
+            sequence[i] = calculator.calc(
                     lambdaExpression.replace(
                             lambdaVariableName,
-                            String.valueOf(srcSequence[i])
+                            String.valueOf(sequence[i])
                     )
             );
         }
-        return null;
+        return sequence;
     }
 
     private boolean parseLambda(String lambda) {
         String[] lambdaTokens = lambda.split("->");
+
+        for (int i = 0; i < lambdaTokens.length; i++) {
+            lambdaTokens[i] = lambdaTokens[i].trim();
+        }
 
         if (lambdaTokens.length != 2) {
             appendError("Lambda should have only variable name and expressions");
             return false;
         }
 
-        if (Validator.isValidVariableName(lambdaTokens[0])) {
+        if (Validator.variableExists(lambdaTokens[0])) {
             this.lambdaVariableName = lambdaTokens[0];
         } else {
             appendError("Invalid variable name");

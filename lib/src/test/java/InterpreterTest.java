@@ -7,6 +7,18 @@ import java.util.Arrays;
 public class InterpreterTest {
 
     @Test
+    void testSimpliestProgram() {
+        String code = "out 44.0 + 56";
+        Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
+        Assertions.assertEquals(Double.doubleToLongBits(100.0),
+                Double.doubleToLongBits(
+                        Double.parseDouble(interpreterOutput.output)
+                )
+        );
+        Assertions.assertTrue(interpreterOutput.errors.isEmpty());
+    }
+
+    @Test
     void testSimpleProgram() {
         double number = 42.0;
         String code =
@@ -79,8 +91,7 @@ public class InterpreterTest {
         String seq = "{1 + 2, 21}";
         String code =
                 "var seq = " + seq + "\n" +
-                "out seq";
-
+                        "out seq";
 
 
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
@@ -162,7 +173,7 @@ public class InterpreterTest {
     void testPrint() {
         String code =
                 "10 * (1 + 10) / 2\n" +
-                "print 55.0";
+                        "print 55.0";
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertEquals("55.0", interpreterOutput.output);
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
@@ -178,6 +189,80 @@ public class InterpreterTest {
         Assertions.assertEquals("\"o is\"\n55.0", interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
     }
+
+    @Test
+    void testMap() {
+        String code =
+                "var squares = map({1,5}, i -> i^2)\n" +
+                        "out squares";
+        Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
+        Assertions.assertEquals(Arrays.toString(new double[]{
+                1, 2 * 2, 3 * 3, 4 * 4, 5 * 5
+        }), interpreterOutput.output);
+        Assertions.assertTrue(interpreterOutput.errors.isEmpty());
+    }
+
+    @Test
+    void testMapOut() {
+        String code = "out map({1,5}, i -> i^2)";
+        Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
+        Assertions.assertEquals(Arrays.toString(new double[]{
+                1, 2 * 2, 3 * 3, 4 * 4, 5 * 5
+        }), interpreterOutput.output);
+        Assertions.assertTrue(interpreterOutput.errors.isEmpty());
+    }
+
+    @Test
+    void testMapVariable() {
+        String code =
+                "var seq = {1,5}\n" +
+                        "var squares = map(seq, i -> i^2)\n" +
+                        "out squares";
+        Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
+        Assertions.assertEquals(Arrays.toString(new double[]{
+                1, 2 * 2, 3 * 3, 4 * 4, 5 * 5
+        }), interpreterOutput.output);
+        Assertions.assertTrue(interpreterOutput.errors.isEmpty());
+    }
+
+    @Test
+    void testMapAndExpression() {
+        String code = "var seq = {1,5}\n" +
+                "var squares = map(seq, i -> i^2)\n" +
+                "out squares\n" +
+                "var o = 10 * (1 + 10) / 2\n" +
+                "out o";
+        Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
+        Assertions.assertEquals(Arrays.toString(new double[]{
+                1, 2 * 2, 3 * 3, 4 * 4, 5 * 5
+        }) + "\n55.0", interpreterOutput.output);
+        Assertions.assertTrue(interpreterOutput.errors.isEmpty());
+    }
+
+    @Test
+    void testMultipleMapApplies() {
+        String code = "var seq = {1,3}\n" +
+                "var doubles = map(seq, i -> i + i)\n" +
+                "out doubles\n" +
+                "var squares = map(doubles, i -> i * i)\n" +
+                "out squares";
+        Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
+        Assertions.assertEquals("[2.0, 4.0, 6.0]\n[4.0, 16.0, 36.0]", interpreterOutput.output);
+        Assertions.assertTrue(interpreterOutput.errors.isEmpty());
+    }
+
+    @Test
+    void testInnerMap() {
+        String code = "var seq = {1,3}\n" +
+                "var ddoubles = map(map(seq, i -> i + i), i -> i + i)\n" +
+                "out ddoubles\n";
+        Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
+        Assertions.assertEquals(Arrays.toString(new double[]{
+                4, 8, 12
+        }), interpreterOutput.output);
+        Assertions.assertTrue(interpreterOutput.errors.isEmpty());
+    }
+
 
     private double[] getSequence(int from, int to) {
         double[] out = new double[to - from + 1];

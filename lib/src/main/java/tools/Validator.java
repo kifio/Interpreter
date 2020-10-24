@@ -2,8 +2,6 @@ package tools;
 
 import formatter.Formatter;
 
-import java.util.List;
-
 public class Validator {
 
     public static boolean isNumber(String strNum) {
@@ -28,7 +26,7 @@ public class Validator {
                 token.equals(Constants.CLOSING_BRACKET);
     }
 
-    public static boolean isValidVariableName(String token) {
+    public static boolean variableExists(String token) {
         char[] chars = token.toCharArray();
 
         for (char c : chars) {
@@ -40,13 +38,17 @@ public class Validator {
         return true;
     }
 
-    public static boolean isValidLambdaExpression(String expression, String[] variables) {
-        String[] expressionTokens = Formatter.getStringWithSpaces(expression).split(Constants.SPACE);
+    public static boolean isValidLambdaExpression(String expression, String[] existedVariables) {
+        String[] expressionTokens = expression.split(Constants.SPACE);
 
         for (String token : expressionTokens) {
+            if (token.isEmpty()) {
+                continue;
+            }
+
             if (!Validator.isSign(token)
                     && !Validator.isNumber(token)
-                    && !isValidVariableName(variables, token)) {
+                    && !variableExists(existedVariables, token)) {
                 return false;
             }
         }
@@ -54,7 +56,7 @@ public class Validator {
         return true;
     }
 
-    private static boolean isValidVariableName(String[] variables, String variable) {
+    private static boolean variableExists(String[] variables, String variable) {
         for (String var : variables) {
             if (var.equals(variable)) {
                 return true;
