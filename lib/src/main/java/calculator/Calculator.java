@@ -1,3 +1,9 @@
+package calculator;
+
+import formatter.Formatter;
+import tools.Constants;
+import tools.Validator;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EmptyStackException;
@@ -5,13 +11,13 @@ import java.util.Stack;
 
 public class Calculator {
 
-    double calc(String expression) {
+    public double calc(String expression) {
         String rpnExpression = convert(expression);
         String[] tokens = rpnExpression.split(Constants.SPACE);
         Stack<Double> numbers = new Stack<>();
 
         for (String token : tokens) {
-            if (Utils.isNumber(token)) {
+            if (Validator.isNumber(token)) {
                 numbers.add(Double.parseDouble(token));
             } else {
                 if (!calc(numbers, token)) {
@@ -23,15 +29,15 @@ public class Calculator {
         return numbers.pop();
     }
 
-    String convert(String expression) {
+    public String convert(String expression) {
 
-        String[] tokens = Utils.getStringWithSpaces(expression).split(Constants.SPACE);
+        String[] tokens = Formatter.getStringWithSpaces(expression).split(Constants.SPACE);
         StringBuilder result = new StringBuilder();
         ArrayList<String> operators = new ArrayList<>();
 
         for (String t : tokens) {
             String token = t.trim();
-            if (Utils.isNumber(token)) {
+            if (Validator.isNumber(token)) {
                 result.append(token);
                 result.append(Constants.SPACE);
             } else if (isOpeningBracket(token)) {
@@ -58,7 +64,7 @@ public class Calculator {
                 if (openingBracket == null) {
                     return null;
                 }
-            } else if (Utils.isSign(token)) {
+            } else if (Validator.isSign(token)) {
                 if (!operators.isEmpty()) {
                     String lastOperator = operators.get(operators.size() - 1);
                     while (needPopOperator(token, lastOperator)) {

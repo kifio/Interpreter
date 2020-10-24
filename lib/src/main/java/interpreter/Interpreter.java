@@ -1,7 +1,12 @@
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Scanner;
+package interpreter;
+
+import calculator.Calculator;
+import formatter.Formatter;
+import formatter.SequenceParserResult;
+import tools.Constants;
+import tools.Validator;
+
+import java.util.*;
 
 public class Interpreter {
 
@@ -36,8 +41,7 @@ public class Interpreter {
         DETERMINE_VARIABLE_TYPE,
 
         // Read expression, which can be calculated.
-        // Available from UNDEFINED, READ_VARIABLE_NAME, READ_SEQUENCE, READ_OUT states.
-        // In case of UNDEFINED, expression is ignored.
+        // Available from READ_VARIABLE_NAME, READ_SEQUENCE, READ_OUT states.
         // In case of READ_VARIABLE_NAME, result of calculation puts in numbers hashmap.
         // In case of READ_OUT, result of calculation appends to output list.
         // In case of READ_SEQUENCE, result of calculation appends to list from sequences list.
@@ -45,7 +49,6 @@ public class Interpreter {
 
         // Read sequence of expressions between { and }
         // Available from UNDEFINED, READ_VARIABLE_NAME states.
-        // In case of UNDEFINED, sequence is ignored.
         // In case of READ_VARIABLE_NAME, result of calculation puts in sequences hashmap.
         READ_SEQUENCE,
 
@@ -54,19 +57,22 @@ public class Interpreter {
         READ_OUT,
 
         // Read string constant.
-        // Available from UNDEFINED, READ_PRINT states.
-        // In case of UNDEFINED, constant is ignored.
+        // Available from READ_PRINT states.
         // In case of READ_PRINT, add to output list.
-        PRINT_STRING_CONSTANT
+        PRINT_STRING_CONSTANT,
 
-        // TODO: add MAP, REDUCE, states
+        // Read string constant.
+        // Available from DETERMINE_VARIABLE_TYPE, READ_OUT states.
+        READ_MAP,
+
+        READ_REDUCE
     }
 
     private final HashMap<String, String> numbers = new HashMap<>();
-    private final HashMap<String, int[]> sequences = new HashMap<>();
+    private final HashMap<String, double[]> sequences = new HashMap<>();
 
-    private final ArrayList<String> output = new ArrayList<>();
-    private final ArrayList<String> errors = new ArrayList<>();
+    private final List<String> output = new ArrayList<>();
+    private final List<String> errors = new ArrayList<>();
 
     private final StringBuilder currentExpression = new StringBuilder();
     private final StringBuilder currentSequence = new StringBuilder();
@@ -93,7 +99,7 @@ public class Interpreter {
         currentState = State.UNDEFINED;
         previousState = State.UNDEFINED;
 
-        String formattedLine = Utils.getStringWithSpaces(line);
+        String formattedLine = Formatter.getStringWithSpaces(line);
         String[] tokens = formattedLine.trim().split(" +");
 
         for (String token : tokens) {
@@ -134,7 +140,7 @@ public class Interpreter {
                     readExpression(token);
                 } else if (sequences.containsKey(token)) {
                     currentState = State.UNDEFINED;
-                    output.add(sequenceToString(sequences.get(token)));
+                    output.add(Arrays.toString(sequences.get(token)));
                 } else {
                     errors.add("Invalid symbol in output");
                     return false;
@@ -147,7 +153,7 @@ public class Interpreter {
     }
 
     private boolean handleVariableName(String token) {
-        if (isValidVariableName(token)) {
+        if (Validator.isValidVariableName(token)) {
             currentVariableName = token;
             currentState = State.READ_ASSIGN_SYMBOL;
             return true;
@@ -178,43 +184,22 @@ public class Interpreter {
             currentSequence.append(token);
             return true;
         } else {
-            int[] formattedSequence = formatCurrentSequence();
-            boolean isSequenceValid = formattedSequence != null;
+            SequenceParserResult sequenceParserResult = Formatter.formatSequence(
+                    calculator,
+                    currentSequence.toString()
+            );
+
+            boolean isSequenceValid = sequenceParserResult.sequence != null
+                    && sequenceParserResult.errors.isEmpty();
 
             if (isSequenceValid) {
-                sequences.put(currentVariableName, formattedSequence);
+                sequences.put(currentVariableName, sequenceParserResult.sequence);
+            } else {
+                errors.addAll(sequenceParserResult.errors);
             }
 
             currentVariableName = null;
             return isSequenceValid;
-        }
-    }
-
-    private int[] formatCurrentSequence() {
-        String[] stringItems = currentSequence.toString().split(Constants.COMMA);
-
-        if (stringItems.length != 2) {
-            errors.add("Sequence must contains 2 items separated by comma");
-            return null;
-        }
-
-        int[] items = new int[stringItems.length];
-
-        for (int i = 0; i < stringItems.length; i++) {
-            double calculatedExpression = calculator.calc(stringItems[i]);
-            if (calculatedExpression % 1 == 0) {
-                items[i] = (int) calculatedExpression;
-            } else {
-                errors.add("Sequence must contains only integers");
-                return null;
-            }
-        }
-
-        if (items[0] < items[1]) {
-            return items;
-        } else {
-            errors.add("Wrong sequence items order");
-            return null;
         }
     }
 
@@ -236,7 +221,7 @@ public class Interpreter {
             str = numbers.get(token);
         }
 
-        if (Utils.isSign(str) || Utils.isNumber(str)) {
+        if (Validator.isSign(str) || Validator.isNumber(str)) {
             currentExpression.append(str);
             return true;
         } else {
@@ -256,7 +241,7 @@ public class Interpreter {
                 output.add(calcCurrentExpression());
             }
         } else if (previousState == State.UNDEFINED &&
-                    currentState == State.PRINT_STRING_CONSTANT) {
+                currentState == State.PRINT_STRING_CONSTANT) {
             output.add(currentStringConstant.toString().trim());
             currentStringConstant.setLength(0);
         }
@@ -288,18 +273,6 @@ public class Interpreter {
         } else {
             errors.add("Unexpected token: " + token);
             return false;
-        }
-
-        return true;
-    }
-
-    private boolean isValidVariableName(String token) {
-        char[] chars = token.toCharArray();
-
-        for (char c : chars) {
-            if (!Character.isLetter(c)) {
-                return false;
-            }
         }
 
         return true;

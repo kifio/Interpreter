@@ -1,5 +1,8 @@
+import interpreter.Interpreter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+
+import java.util.Arrays;
 
 public class InterpreterTest {
 
@@ -41,12 +44,11 @@ public class InterpreterTest {
 
     @Test
     void testSimpleProgramWithValidSequence() {
-        String seq = "21,42";
         String code =
-                "var seq = {" + seq + "}\n" +
+                "var seq = {21, 42 }\n" +
                         "out seq";
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
-        Assertions.assertEquals(seq, interpreterOutput.output);
+        Assertions.assertEquals(Arrays.toString(getSequence(21, 42)), interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
     }
 
@@ -77,9 +79,12 @@ public class InterpreterTest {
         String seq = "{1 + 2, 21}";
         String code =
                 "var seq = " + seq + "\n" +
-                        "out seq";
+                "out seq";
+
+
+
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
-        Assertions.assertEquals("3,21", interpreterOutput.output);
+        Assertions.assertEquals(Arrays.toString(getSequence(1 + 2, 21)), interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
     }
 
@@ -172,5 +177,15 @@ public class InterpreterTest {
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertEquals("\"o is\"\n55.0", interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
+    }
+
+    private double[] getSequence(int from, int to) {
+        double[] out = new double[to - from + 1];
+
+        for (int i = from; i <= to; i++) {
+            out[i - from] = i;
+        }
+
+        return out;
     }
 }
