@@ -2,7 +2,9 @@ import interpreter.Interpreter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class InterpreterTest {
 
@@ -128,7 +130,7 @@ public class InterpreterTest {
                         "var bar = 3 ^ 2 * 3\n" +
                         "out foo + bar";
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
-//        Assertions.assertTrue(interpreterOutput.output.isEmpty());
+        Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
     }
 
@@ -171,12 +173,10 @@ public class InterpreterTest {
 
     @Test
     void testPrint() {
-        String code =
-                "10 * (1 + 10) / 2\n" +
-                        "print 55.0";
+        String code =                 "print 55.0";
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertEquals("55.0", interpreterOutput.output);
-        Assertions.assertFalse(interpreterOutput.errors.isEmpty());
+        Assertions.assertTrue(interpreterOutput.errors.isEmpty());
     }
 
     @Test
@@ -251,7 +251,6 @@ public class InterpreterTest {
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
     }
 
-    // TODO: correctly reset variables
     @Test
     void testInnerMap() {
         String code = "var seq = {1,3}\n" +
@@ -271,6 +270,19 @@ public class InterpreterTest {
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertEquals(Arrays.toString(new double[]{
                 -0.3333333333333333, 0.2, -0.14285714285714285, 0.1111111111111111, -0.09090909090909091
+        }), interpreterOutput.output);
+        Assertions.assertTrue(interpreterOutput.errors.isEmpty());
+    }
+
+    @Test
+    void testMoreVariables() {
+        String code = "var n = 1\n" +
+                "var m = 5\n" +
+                "var seq = {n, m}\n" +
+                "out map(seq, i -> i ^ 2)\n";
+        Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
+        Assertions.assertEquals(Arrays.toString(new double[]{
+                1, 4, 9, 16, 25
         }), interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
     }

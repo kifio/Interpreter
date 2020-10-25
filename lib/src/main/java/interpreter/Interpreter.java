@@ -6,6 +6,7 @@ import formatter.Formatter;
 import formatter.SequenceParserResult;
 import function.FunctionReader;
 import function.executor.MapExecutor;
+import provider.SequenceProvider;
 import tools.Constants;
 import tools.Validator;
 
@@ -84,7 +85,10 @@ public class Interpreter {
 
     private final Calculator calculator = new Calculator();
     private final FunctionReader<double[]> mapReader = new FunctionReader<>(
-            new MapExecutor(calculator, sequences::get, numbers::get));
+            new MapExecutor(calculator, sequenceName -> {
+                double[] sequence = sequences.get(sequenceName);
+                return sequence != null ? Arrays.copyOf(sequence, sequence.length) : null;
+            }, numbers::get));
 
     private String currentVariableName = null;
     private State currentState = State.UNDEFINED;
@@ -95,14 +99,16 @@ public class Interpreter {
 
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();
-            processLine(line);
+            if (!processLine(line)) {
+                return new Interpreter.Output(output, errors);
+            }
         }
 
         scanner.close();
         return new Interpreter.Output(output, errors);
     }
 
-    private void processLine(String line) {
+    private boolean processLine(String line) {
         currentState = State.UNDEFINED;
         previousState = State.UNDEFINED;
 
@@ -116,11 +122,12 @@ public class Interpreter {
             }
 
             if (!handleToken(token)) {
-                return;
+                return false;
             }
         }
 
         completeCurrentLine();
+        return true;
     }
 
     private boolean handleToken(String token) {
@@ -291,22 +298,17 @@ public class Interpreter {
                     errors.add("Cannot apply map");
                 }
             } else if (sequences.containsKey(out)) {
-//                SequenceParserResult sequenceParserResult = Formatter.formatSequence(
-//                        calculator,
-//
-//                );
-//                if (sequenceParserResult.sequence != null) {
-//                    output.add(Arrays.toString(sequenceParserResult.sequence));
-//                } else {
-//                    errors.addAll(sequenceParserResult.errors);
-//                }
                 output.add(Arrays.toString(sequences.get(out)));
             } else {
                 errors.add("Invalid expression in out");
             }
         }
-
+        mapReader.reset();
         currentOut.setLength(0);
+        currentExpression.setLength(0);
+        currentSequence.setLength(0);
+        currentStringConstant.setLength(0);
+        currentVariableName = null;
     }
 
     private String calcCurrentExpression() {
