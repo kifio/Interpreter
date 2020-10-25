@@ -1,7 +1,11 @@
 package formatter;
 
 import calculator.Calculator;
+import provider.NumbersProvider;
 import tools.Constants;
+import tools.Validator;
+
+import java.util.HashMap;
 
 public class Formatter {
 
@@ -19,7 +23,8 @@ public class Formatter {
 
     public static SequenceParserResult formatSequence(
             Calculator calculator,
-            String currentSequence
+            String currentSequence,
+            NumbersProvider numbersProvider
     ) {
         String[] stringItems = currentSequence.split(Constants.COMMA);
         SequenceParserResult sequenceParserResult = new SequenceParserResult();
@@ -32,9 +37,14 @@ public class Formatter {
         int[] sequence = new int[stringItems.length];
 
         for (int i = 0; i < stringItems.length; i++) {
-            double calculatedExpression = calculator.calc(stringItems[i]);
-            if (calculatedExpression % 1 == 0) {
-                sequence[i] = (int) calculatedExpression;
+            String value = numbersProvider.getNumberByName(stringItems[i]);
+            if (value != null) {
+                stringItems[i] = value;
+            }
+
+            Double calculatedExpression = calculator.calc(stringItems[i]);
+            if (calculatedExpression != null && calculatedExpression % 1 == 0) {
+                sequence[i] = calculatedExpression.intValue();
             } else {
                 sequenceParserResult.errors.add("Sequence must contains only integers");
                 return sequenceParserResult;
@@ -53,6 +63,39 @@ public class Formatter {
         }
 
         return sequenceParserResult;
+    }
+
+    public static ExpressionParserResult formatExpression(
+            String expression,
+            NumbersProvider numbersProvider
+    ) {
+
+        String[] expressionTokens = Formatter.getStringWithSpaces(expression).split(Constants.SPACE);
+        ExpressionParserResult expressionParserResult = new ExpressionParserResult();
+        StringBuilder expressionBuilder = new StringBuilder();
+        for (String token : expressionTokens) {
+            token = token.trim();
+
+            String  value = numbersProvider.getNumberByName(token);
+            if (value != null) {
+                token = value;
+            }
+
+            if (token.isEmpty()) {
+                continue;
+            }
+
+            if (!Validator.isSign(token)
+                    && !Validator.isNumber(token)) {
+                expressionParserResult.errors.add("Undefined symbol: " + token);
+                return expressionParserResult;
+            } else {
+                expressionBuilder.append(token);
+            }
+        }
+
+        expressionParserResult.expression = expressionBuilder.toString();
+        return expressionParserResult;
     }
 
 }

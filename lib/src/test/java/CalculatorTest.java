@@ -27,9 +27,9 @@ public class CalculatorTest {
 
     private static final TestData[] TEST_DATA = {
             new TestData(
-                    "42 + 21 + 11.5",
-                    "42 21 + 11.5 +",
-                    74.5
+                    "(-42) + 21 + 11.5",
+                    "42 - 21 + 11.5 +",
+                    -9.5
             ),
             new TestData(
                     "700 - 200 * 3",

@@ -1,9 +1,11 @@
 package interpreter;
 
 import calculator.Calculator;
+import formatter.ExpressionParserResult;
 import formatter.Formatter;
 import formatter.SequenceParserResult;
-import reader.MapReader;
+import function.FunctionReader;
+import function.executor.MapExecutor;
 import tools.Constants;
 import tools.Validator;
 
@@ -78,8 +80,11 @@ public class Interpreter {
     private final StringBuilder currentExpression = new StringBuilder();
     private final StringBuilder currentSequence = new StringBuilder();
     private final StringBuilder currentStringConstant = new StringBuilder();
+    private final StringBuilder currentOut = new StringBuilder();
+
     private final Calculator calculator = new Calculator();
-    private final MapReader mapReader = new MapReader(calculator, sequences::get);
+    private final FunctionReader<double[]> mapReader = new FunctionReader<>(
+            new MapExecutor(calculator, sequences::get, numbers::get));
 
     private String currentVariableName = null;
     private State currentState = State.UNDEFINED;
@@ -137,17 +142,7 @@ public class Interpreter {
             case PRINT_STRING_CONSTANT:
                 return addConstantToOutput(token);
             case READ_OUT:
-                previousState = State.READ_OUT;
-
-                if (sequences.containsKey(token)) {
-                    output.add(Arrays.toString(sequences.get(token)));
-                } else if (token.equals(Constants.MAP)) {
-                    currentState = State.READ_MAP;
-                } else {
-                    currentState = State.READ_EXPRESSION;
-                    readExpression(token);
-                }
-
+                currentOut.append(token);
                 return true;
             default:
                 return false;
@@ -166,13 +161,15 @@ public class Interpreter {
     private boolean applyMap() {
         if (mapReader.validate()) {
             if (previousState == State.DETERMINE_VARIABLE_TYPE) {
-                sequences.put(currentVariableName, mapReader.compute());
+                sequences.put(currentVariableName, mapReader.executor.compute());
             } else if (previousState == State.READ_OUT) {
-                output.add(Arrays.toString(mapReader.compute()));
+                output.add(Arrays.toString(mapReader.executor.compute()));
             }
             currentState = previousState;
+            mapReader.reset();
             return true;
         } else {
+            mapReader.reset();
             return false;
         }
     }
@@ -211,7 +208,8 @@ public class Interpreter {
         } else {
             SequenceParserResult sequenceParserResult = Formatter.formatSequence(
                     calculator,
-                    currentSequence.toString()
+                    currentSequence.toString(),
+                    numbers::get
             );
 
             boolean isSequenceValid = sequenceParserResult.sequence != null
@@ -258,26 +256,57 @@ public class Interpreter {
     }
 
     private void completeCurrentLine() {
-        if (previousState == State.DETERMINE_VARIABLE_TYPE) {
-            if (currentState == State.READ_EXPRESSION) {
-                String result = calcCurrentExpression();
-                if (result != null) {
+        if (currentState == State.READ_EXPRESSION) {
+            String result = calcCurrentExpression();
+            if (result != null) {
+                if (previousState == State.READ_EXPRESSION) {
                     numbers.put(currentVariableName, result);
-                }
-                currentVariableName = null;
-            }
-        } else if (previousState == State.READ_OUT) {
-            if (currentState == State.READ_EXPRESSION) {
-                String result = calcCurrentExpression();
-                if (result != null) {
+                } else if (previousState == State.READ_OUT) {
                     output.add(result);
                 }
             }
-        } else if (previousState == State.UNDEFINED &&
-                currentState == State.PRINT_STRING_CONSTANT) {
+            currentVariableName = null;
+        } else if (currentState == State.PRINT_STRING_CONSTANT
+                && previousState == State.UNDEFINED) {
             output.add(currentStringConstant.toString().trim());
             currentStringConstant.setLength(0);
+        } else if (currentState == State.READ_OUT) {
+            String out = currentOut.toString().trim();
+
+            ExpressionParserResult formattedExpression = Formatter.formatExpression(out, numbers::get);
+
+            Double expressionResult = null;
+
+            if (formattedExpression.expression != null) {
+                expressionResult = calculator.calc(formattedExpression.expression);
+            }
+
+            if (expressionResult != null) {
+                output.add(String.valueOf(expressionResult));
+            } else if (out.startsWith(Constants.MAP)) {
+                out = out.substring(3);
+                if (mapReader.executor.validate(out)) {
+                    output.add(Arrays.toString(mapReader.executor.compute()));
+                } else {
+                    errors.add("Cannot apply map");
+                }
+            } else if (sequences.containsKey(out)) {
+//                SequenceParserResult sequenceParserResult = Formatter.formatSequence(
+//                        calculator,
+//
+//                );
+//                if (sequenceParserResult.sequence != null) {
+//                    output.add(Arrays.toString(sequenceParserResult.sequence));
+//                } else {
+//                    errors.addAll(sequenceParserResult.errors);
+//                }
+                output.add(Arrays.toString(sequences.get(out)));
+            } else {
+                errors.add("Invalid expression in out");
+            }
         }
+
+        currentOut.setLength(0);
     }
 
     private String calcCurrentExpression() {
@@ -288,7 +317,9 @@ public class Interpreter {
         String expr = currentExpression.toString();
         currentExpression.setLength(0);
         previousState = State.READ_EXPRESSION;
-        return String.valueOf(calculator.calc(expr));
+
+        Double result = calculator.calc(expr);
+        return result != null ? String.valueOf(result) : null;
     }
 
     private boolean handleTokenInUndefinedState(String token) {

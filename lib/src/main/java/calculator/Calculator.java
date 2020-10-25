@@ -11,7 +11,7 @@ import java.util.Stack;
 
 public class Calculator {
 
-    public double calc(String expression) {
+    public Double calc(String expression) {
         String rpnExpression = convert(expression);
         String[] tokens = rpnExpression.split(Constants.SPACE);
         Stack<Double> numbers = new Stack<>();
@@ -21,7 +21,7 @@ public class Calculator {
                 numbers.add(Double.parseDouble(token));
             } else {
                 if (!calc(numbers, token)) {
-                    return Double.NaN;
+                    return null;
                 }
             }
         }
@@ -30,8 +30,8 @@ public class Calculator {
     }
 
     public String convert(String expression) {
-
         String[] tokens = Formatter.getStringWithSpaces(expression).split(Constants.SPACE);
+//        String[] tokens = expression.split(Constants.SPACE);
         StringBuilder result = new StringBuilder();
         ArrayList<String> operators = new ArrayList<>();
 
@@ -97,31 +97,42 @@ public class Calculator {
     boolean calc(Stack<Double> operands, String operator) {
         double b, a;
 
-        try {
+        if (operands.size() == 1) {
+            b = operands.pop();
+
+            switch (operator) {
+                case Constants.PLUS:
+                    operands.push(b);
+                    return true;
+                case Constants.MINUS:
+                    operands.push(-b);
+                    return true;
+                default:
+                    throw new IllegalArgumentException("Unknown operator " + operator);
+            }
+
+        } else {
             b = operands.pop();
             a = operands.pop();
-        } catch (EmptyStackException e) {
-            return false;
-        }
-
-        switch (operator) {
-            case Constants.PLUS:
-                operands.push(a + b);
-                return true;
-            case Constants.MINUS:
-                operands.push(a - b);
-                return true;
-            case Constants.MULTIPLY:
-                operands.push(a * b);
-                return true;
-            case Constants.DIVIDE:
-                operands.push(a / b);
-                return true;
-            case Constants.POW:
-                operands.push(Math.pow(a, b));
-                return true;
-            default:
-                throw new IllegalArgumentException("Unknown operator " + operator);
+            switch (operator) {
+                case Constants.PLUS:
+                    operands.push(a + b);
+                    return true;
+                case Constants.MINUS:
+                    operands.push(a - b);
+                    return true;
+                case Constants.MULTIPLY:
+                    operands.push(a * b);
+                    return true;
+                case Constants.DIVIDE:
+                    operands.push(a / b);
+                    return true;
+                case Constants.POW:
+                    operands.push(Math.pow(a, b));
+                    return true;
+                default:
+                    throw new IllegalArgumentException("Unknown operator " + operator);
+            }
         }
     }
 

@@ -1,4 +1,4 @@
-package reader;
+package provider;
 
 public interface SequenceProvider {
     double[] getSequenceByName(String sequenceName);

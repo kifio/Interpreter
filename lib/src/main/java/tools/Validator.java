@@ -39,7 +39,7 @@ public class Validator {
     }
 
     public static boolean isValidLambdaExpression(String expression, String[] existedVariables) {
-        String[] expressionTokens = expression.split(Constants.SPACE);
+        String[] expressionTokens = Formatter.getStringWithSpaces(expression).split(Constants.SPACE);
 
         for (String token : expressionTokens) {
             if (token.isEmpty()) {

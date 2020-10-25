@@ -1,51 +1,69 @@
-package reader;
+package function.executor;
 
 import calculator.Calculator;
 import formatter.Formatter;
 import formatter.SequenceParserResult;
+import provider.NumbersProvider;
+import provider.SequenceProvider;
 import tools.Constants;
 import tools.Validator;
 
 import java.util.ArrayList;
 
-public class MapReader extends FuncReader<double[]> {
+public class MapExecutor extends Executor<double[]> {
 
-    public MapReader(Calculator calculator, SequenceProvider sequenceProvider) {
-        super(calculator, sequenceProvider);
+    public MapExecutor(Calculator calculator,
+                       SequenceProvider sequenceProvider,
+                       NumbersProvider numbersProvider) {
+        super(calculator, sequenceProvider, numbersProvider);
     }
 
     @Override
-    public boolean validate() {
-        String str = Formatter.getStringWithSpaces(functionParameters.toString()).trim();
+    public boolean validate(String functionString) {
         String[] tokens = new String[2];
 
-        int separatorIndex = str.lastIndexOf(Constants.COMMA);
+        int separatorIndex = functionString.lastIndexOf(Constants.COMMA);
 
         if (separatorIndex == -1) {
             appendError("Map required two arguments: sequence and lambda");
             return false;
         }
 
-        tokens[0] = str.substring(1, separatorIndex)
+        tokens[0] = functionString.substring(1, separatorIndex)
                 .replace(Constants.START_SEQUENCE, Constants.SPACE)
                 .replace(Constants.END_SEQUENCE, Constants.SPACE)
                 .trim();
 
-        tokens[1] = str.substring(separatorIndex + 1, str.length() - 2)
+        tokens[1] = functionString.substring(separatorIndex + 1, functionString.length() - 1)
                 .replace("- >", "->")
                 .trim();
 
-        if (Validator.variableExists(tokens[0])) {
-            sequence = sequenceProvider.getSequenceByName(tokens[0]);
-        } else if (!handleSequence(tokens[0])) {
-            return false;
+        if (!handleVariable(tokens[0])) {
+            if (!handleMap(tokens[0])) {
+                if (!handleSequence(tokens[0])) {
+                    reset();
+                    return false;
+                }
+            }
         }
 
         return parseLambda(tokens[1]);
     }
 
+    private boolean handleVariable(String token) {
+        if (Validator.variableExists(token)) {
+            sequence = sequenceProvider.getSequenceByName(token);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private boolean handleSequence(String sequence) {
-        SequenceParserResult sequenceParserResult = Formatter.formatSequence(calculator, sequence);
+        SequenceParserResult sequenceParserResult = Formatter.formatSequence(
+                calculator,
+                sequence,
+                numbersProvider);
 
         boolean isSequenceValid = sequenceParserResult.sequence != null
                 && sequenceParserResult.errors.isEmpty();
@@ -62,15 +80,34 @@ public class MapReader extends FuncReader<double[]> {
         return true;
     }
 
+    private boolean handleMap(String token) {
+        if (token.startsWith(Constants.MAP)) {
+            token = token.substring(3);
+            MapExecutor nestedExecutor = new MapExecutor(calculator, sequenceProvider, numbersProvider);
+            if (nestedExecutor.validate(token)) {
+                this.sequence = nestedExecutor.compute();
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public double[] compute() {
         for (int i = 0; i < sequence.length; i++) {
-            sequence[i] = calculator.calc(
+            Double item = calculator.calc(
                     lambdaExpression.replace(
                             lambdaVariableName,
                             String.valueOf(sequence[i])
                     )
             );
+
+            if (item != null) {
+                sequence[i] = item;
+            }
         }
         return sequence;
     }
