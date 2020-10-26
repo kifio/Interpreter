@@ -9,8 +9,15 @@ import tools.Constants;
 import tools.Validator;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
 
-public class MapExecutor extends Executor<double[]> {
+public class MapExecutor extends Executor<float[]> {
+
+    private static final int BATCH_SIZE = 10000;
+
+    private String lambdaVariableName;
+    private String lambdaExpression;
 
     public MapExecutor(Calculator calculator,
                        SequenceProvider sequenceProvider,
@@ -96,20 +103,83 @@ public class MapExecutor extends Executor<double[]> {
     }
 
     @Override
-    public double[] compute() {
+    public float[] compute() {
+        computeAsync();
+        return sequence;
+    }
+
+    private void computeSync() {
+        long start = System.currentTimeMillis();
         for (int i = 0; i < sequence.length; i++) {
-            Double item = calculator.calc(
-                    lambdaExpression.replace(
-                            lambdaVariableName,
-                            String.valueOf(sequence[i])
-                    )
+            Float item = calculator.calc(
+                    lambdaExpression,
+                    lambdaVariableName,
+                    String.valueOf(sequence[i])
             );
 
             if (item != null) {
                 sequence[i] = item;
             }
         }
-        return sequence;
+        long end = System.currentTimeMillis();
+        System.out.println("Computations took: " + ((end - start)) );
+    }
+
+    private void computeAsync() {
+        int parallelOperationsCount = 1 + sequence.length / BATCH_SIZE;
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        List<Runnable> operations = new ArrayList<>(parallelOperationsCount);
+
+        long start = System.currentTimeMillis();
+
+        for (int operationIndex = 0; operationIndex < parallelOperationsCount; operationIndex++) {
+            final int index = operationIndex;
+            operations.add(new Runnable() {
+                @Override
+                public void run() {
+                    processBatch(index);
+                }
+            });
+        }
+
+        List<Future<?>> futures = new ArrayList<>(operations.size());
+
+        for (Runnable runnable : operations) {
+            futures.add(executorService.submit(runnable));
+        }
+
+        for (Future<?> future : futures) {
+            try {
+                future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+
+        long end = System.currentTimeMillis();
+        System.out.println("Computations took: " + ((end - start)) );
+    }
+
+    private void processBatch(final int operationIndex) {
+
+        for (int i = 0; i < BATCH_SIZE; i++) {
+            final int itemIndex = i + (BATCH_SIZE * operationIndex);
+
+            if (itemIndex >= sequence.length) {
+                return;
+            }
+
+            Float item = calculator.calc(
+                    lambdaExpression, lambdaVariableName,
+                    String.valueOf(sequence[itemIndex])
+            );
+
+            if (item != null) {
+                sequence[i] = item;
+            } else {
+                System.out.println("item at " + itemIndex + " is null");
+            }
+        }
     }
 
     private boolean parseLambda(String lambda) {
@@ -148,5 +218,12 @@ public class MapExecutor extends Executor<double[]> {
         }
 
         errors.add(error);
+    }
+
+    @Override
+    public void reset() {
+        super.reset();
+        lambdaVariableName = null;
+        lambdaExpression = null;
     }
 }

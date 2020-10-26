@@ -9,7 +9,7 @@ public class Validator {
             return false;
         }
         try {
-            Double.parseDouble(strNum);
+            Float.parseFloat(strNum);
         } catch (NumberFormatException nfe) {
             return false;
         }

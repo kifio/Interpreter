@@ -1,24 +1,50 @@
 package calculator;
 
 import formatter.Formatter;
+import provider.NumbersProvider;
 import tools.Constants;
 import tools.Validator;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EmptyStackException;
-import java.util.Stack;
+import java.util.*;
 
 public class Calculator {
 
-    public Double calc(String expression) {
-        String rpnExpression = convert(expression);
-        String[] tokens = rpnExpression.split(Constants.SPACE);
-        Stack<Double> numbers = new Stack<>();
+    public Float calc(String expression, String variable, String value) {
+        String[] tokens = Formatter.getStringWithSpaces(expression).split(Constants.SPACE);
+
+        for (int i = 0; i < tokens.length; i++) {
+            if (tokens[i].equals(variable)) {
+                tokens[i] = value;
+            }
+        }
+
+        List<String> rpnTokens = convert(tokens);
+
+        return calc(rpnTokens);
+    }
+
+
+    public Float calc(String expression, NumbersProvider numbersProvider) {
+        String[] tokens = Formatter.getStringWithSpaces(expression).split(Constants.SPACE);
+
+        for (int i = 0; i < tokens.length; i++) {
+            String valueOfVariable = numbersProvider.getNumberByName(tokens[i]);
+            if (valueOfVariable != null) {
+                tokens[i] = valueOfVariable;
+            }
+        }
+
+        List<String> rpnTokens = convert(tokens);
+
+        return calc(rpnTokens);
+    }
+
+    private Float calc(List<String> tokens) {
+        Stack<Float> numbers = new Stack<>();
 
         for (String token : tokens) {
             if (Validator.isNumber(token)) {
-                numbers.add(Double.parseDouble(token));
+                numbers.add(Float.parseFloat(token));
             } else {
                 if (!calc(numbers, token)) {
                     return null;
@@ -29,17 +55,14 @@ public class Calculator {
         return numbers.pop();
     }
 
-    public String convert(String expression) {
-        String[] tokens = Formatter.getStringWithSpaces(expression).split(Constants.SPACE);
-//        String[] tokens = expression.split(Constants.SPACE);
-        StringBuilder result = new StringBuilder();
+    private List<String> convert(String[] tokens) {
+        ArrayList<String> result = new ArrayList<>();
         ArrayList<String> operators = new ArrayList<>();
 
-        for (String t : tokens) {
-            String token = t.trim();
+        for (String s : tokens) {
+            String token = s.trim();
             if (Validator.isNumber(token)) {
-                result.append(token);
-                result.append(Constants.SPACE);
+                result.add(token);
             } else if (isOpeningBracket(token)) {
                 operators.add(token);
             } else if (isClosingBracket(token)) {
@@ -54,10 +77,7 @@ public class Calculator {
                         operators.remove(operators.size() - 1);
                         break;
                     }
-
-                    result.append(o);
-                    result.append(Constants.SPACE);
-
+                    result.add(o);
                     operators.remove(operators.size() - 1);
                 }
 
@@ -68,8 +88,7 @@ public class Calculator {
                 if (!operators.isEmpty()) {
                     String lastOperator = operators.get(operators.size() - 1);
                     while (needPopOperator(token, lastOperator)) {
-                        result.append(lastOperator);
-                        result.append(Constants.SPACE);
+                        result.add(lastOperator);
                         operators.remove(operators.size() - 1);
                         if (operators.isEmpty()) {
                             break;
@@ -84,18 +103,14 @@ public class Calculator {
 
         for (int i = operators.size() - 1; i >= 0; i--) {
             String element = operators.get(i);
-            result.append(element);
-
-            if (i != 0) {
-                result.append(Constants.SPACE);
-            }
+            result.add(element);
         }
 
-        return result.toString();
+        return result;
     }
 
-    boolean calc(Stack<Double> operands, String operator) {
-        double b, a;
+    private boolean calc(Stack<Float> operands, String operator) {
+        float b, a;
 
         if (operands.size() == 1) {
             b = operands.pop();
@@ -128,7 +143,7 @@ public class Calculator {
                     operands.push(a / b);
                     return true;
                 case Constants.POW:
-                    operands.push(Math.pow(a, b));
+                    operands.push((float) Math.pow(a, b));
                     return true;
                 default:
                     throw new IllegalArgumentException("Unknown operator " + operator);
@@ -136,30 +151,15 @@ public class Calculator {
         }
     }
 
-    boolean isOpeningBracket(String token) {
+    private boolean isOpeningBracket(String token) {
         return Constants.OPENING_BRACKET.equals(token);
     }
 
-    boolean isClosingBracket(String token) {
+    private boolean isClosingBracket(String token) {
         return Constants.CLOSING_BRACKET.equals(token);
     }
 
-    boolean isOperatorsStackEmpty(Stack<String> operators) {
-
-        if (operators.isEmpty()) {
-            return true;
-        }
-
-        for (String o : operators) {
-            if (!isOpeningBracket(o)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    int getPriority(String o) {
+    private int getPriority(String o) {
         switch (o) {
             case Constants.PLUS:
             case Constants.MINUS:
@@ -174,15 +174,15 @@ public class Calculator {
         }
     }
 
-    boolean isRightAssociative(String o) {
+    private boolean isRightAssociative(String o) {
         return o.equals(Constants.POW);
     }
 
-    boolean isLeftAssociative(String o) {
+    private boolean isLeftAssociative(String o) {
         return !o.equals(Constants.POW);
     }
 
-    boolean needPopOperator(String token, String lastOperator) {
+    private boolean needPopOperator(String token, String lastOperator) {
         return !isOpeningBracket(lastOperator)
                 && ((isRightAssociative(token) && getPriority(token) < getPriority(lastOperator))
                 || (isLeftAssociative(token) && getPriority(token) <= getPriority(lastOperator)));

@@ -8,11 +8,8 @@ import java.util.List;
 
 public abstract class Executor<T> {
 
-    double[] sequence;
+    float[] sequence;
     public List<String> errors;
-
-    String lambdaVariableName;
-    String lambdaExpression;
 
     final Calculator calculator;
     final SequenceProvider sequenceProvider;
@@ -37,7 +34,5 @@ public abstract class Executor<T> {
 
     public void reset() {
         sequence = null;
-        lambdaVariableName = null;
-        lambdaExpression = null;
     }
 }

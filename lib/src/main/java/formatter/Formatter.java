@@ -37,12 +37,7 @@ public class Formatter {
         int[] sequence = new int[stringItems.length];
 
         for (int i = 0; i < stringItems.length; i++) {
-            String value = numbersProvider.getNumberByName(stringItems[i]);
-            if (value != null) {
-                stringItems[i] = value;
-            }
-
-            Double calculatedExpression = calculator.calc(stringItems[i]);
+            Float calculatedExpression = calculator.calc(stringItems[i], numbersProvider);
             if (calculatedExpression != null && calculatedExpression % 1 == 0) {
                 sequence[i] = calculatedExpression.intValue();
             } else {
@@ -56,7 +51,7 @@ public class Formatter {
             return sequenceParserResult;
         }
 
-        sequenceParserResult.sequence = new double[sequence[1] - sequence[0] + 1];
+        sequenceParserResult.sequence = new float[sequence[1] - sequence[0] + 1];
 
         for (int i = sequence[0]; i <= sequence[1]; i++) {
             sequenceParserResult.sequence[i - sequence[0]] = i;

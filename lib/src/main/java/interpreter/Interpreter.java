@@ -6,6 +6,7 @@ import formatter.Formatter;
 import formatter.SequenceParserResult;
 import function.FunctionReader;
 import function.executor.MapExecutor;
+import provider.NumbersProvider;
 import provider.SequenceProvider;
 import tools.Constants;
 import tools.Validator;
@@ -73,7 +74,7 @@ public class Interpreter {
     }
 
     private final HashMap<String, String> numbers = new HashMap<>();
-    private final HashMap<String, double[]> sequences = new HashMap<>();
+    private final HashMap<String, float[]> sequences = new HashMap<>();
 
     private final List<String> output = new ArrayList<>();
     private final List<String> errors = new ArrayList<>();
@@ -83,12 +84,14 @@ public class Interpreter {
     private final StringBuilder currentStringConstant = new StringBuilder();
     private final StringBuilder currentOut = new StringBuilder();
 
+    private final NumbersProvider numbersProvider = numbers::get;
+
     private final Calculator calculator = new Calculator();
-    private final FunctionReader<double[]> mapReader = new FunctionReader<>(
+    private final FunctionReader<float[]> mapReader = new FunctionReader<>(
             new MapExecutor(calculator, sequenceName -> {
-                double[] sequence = sequences.get(sequenceName);
+                float[] sequence = sequences.get(sequenceName);
                 return sequence != null ? Arrays.copyOf(sequence, sequence.length) : null;
-            }, numbers::get));
+            }, numbersProvider));
 
     private String currentVariableName = null;
     private State currentState = State.UNDEFINED;
@@ -216,7 +219,7 @@ public class Interpreter {
             SequenceParserResult sequenceParserResult = Formatter.formatSequence(
                     calculator,
                     currentSequence.toString(),
-                    numbers::get
+                    numbersProvider
             );
 
             boolean isSequenceValid = sequenceParserResult.sequence != null
@@ -280,12 +283,12 @@ public class Interpreter {
         } else if (currentState == State.READ_OUT) {
             String out = currentOut.toString().trim();
 
-            ExpressionParserResult formattedExpression = Formatter.formatExpression(out, numbers::get);
+            ExpressionParserResult formattedExpression = Formatter.formatExpression(out, numbersProvider);
 
-            Double expressionResult = null;
+            Float expressionResult = null;
 
             if (formattedExpression.expression != null) {
-                expressionResult = calculator.calc(formattedExpression.expression);
+                expressionResult = calculator.calc(formattedExpression.expression, numbersProvider);
             }
 
             if (expressionResult != null) {
@@ -320,7 +323,7 @@ public class Interpreter {
         currentExpression.setLength(0);
         previousState = State.READ_EXPRESSION;
 
-        Double result = calculator.calc(expr);
+        Float result = calculator.calc(expr, numbersProvider);
         return result != null ? String.valueOf(result) : null;
     }
 

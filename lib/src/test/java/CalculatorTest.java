@@ -7,9 +7,9 @@ public class CalculatorTest {
     private static class TestData {
         String expression;
         String converted;
-        double result;
+        float result;
 
-        TestData(String expression, String converted, double result) {
+        TestData(String expression, String converted, float result) {
             this.expression = expression;
             this.converted = converted;
             this.result = result;
@@ -29,77 +29,77 @@ public class CalculatorTest {
             new TestData(
                     "(-42) + 21 + 11.5",
                     "42 - 21 + 11.5 +",
-                    -9.5
+                    -9.5F
             ),
             new TestData(
                     "700 - 200 * 3",
                     "700 200 3 * -",
-                    100
+                    100F
             ),
             new TestData(
                     "3 + 4 * ( 2 - 1 )",
                     "3 4 2 1 - * +",
-                    7
+                    7F
             ),
             new TestData(
                     "( 1.0 + 2 ) * 4 + 3",
                     "1.0 2 + 4 * 3 +",
-                    15.0
+                    15.0F
             ),
             new TestData(
                     "(  2 + 3.0 ) * 11  +  1",
                     "2 3.0 + 11 * 1 +",
-                    56
+                    56F
             ),
             new TestData(
                     "2 ^ 2 ^ 2",
                     "2 2 2 ^ ^",
-                    16
+                    16F
             ),
             new TestData(
                     "3 * 2 + 5",
                     "3 2 * 5 +",
-                    11
+                    11F
             ),
             new TestData(
                     "( 12 - 3 ) / 3",
                     "12 3 - 3 /",
-                    3
+                    3F
             ),
             new TestData(
                     "5 +  2 ^ 3",
                     "5 2 3 ^ +",
-                    13
+                    13F
             ),
             new TestData(
                     "3.2 * 2 - 11",
                     "3.2 2 * 11 -",
-                    -4.6
+                    -4.6F
             ),
             new TestData(
                     "2 + 1 - 12 / 3",
                     "2 1 + 12 3 / -",
-                    -1
+                    -1F
             ),
             new TestData(
                     "( 6 - 3 ) ^ 2 - 11",
                     "6 3 - 2 ^ 11 -",
-                    -2
+                    -2F
             ),
             new TestData(
                     "6 - 3 ^ 2 - 11",
                     "6 3 2 ^ - 11 -",
-                    -14)
-            ,
+                    -14F
+            ),
             new TestData(
                     "162 / ( 2 + 1 ) ^ 4",
                     "162 2 1 + 4 ^ /",
-                    2
+                    2F
             ),
             new TestData(
                     "( 3 + 5 ) * ( 7 - 2 )",
                     "3 5 + 7 2 - *",
-                    40
+                    40F
             )
     };
 
@@ -108,11 +108,11 @@ public class CalculatorTest {
     void testCalculator() {
         Calculator calculator = new Calculator();
         for (TestData testDatum : TEST_DATA) {
-            double result = calculator.calc(testDatum.expression);
+            float result = calculator.calc(testDatum.expression, null, null);
             System.out.println("actual: " + result + "; expected: " + testDatum.result);
             Assertions.assertEquals(
-                    Double.doubleToLongBits(result),
-                    Double.doubleToLongBits(testDatum.result)
+                    Float.floatToIntBits(result),
+                    Float.floatToIntBits(testDatum.result)
             );
         }
     }
