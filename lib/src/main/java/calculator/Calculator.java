@@ -20,7 +20,7 @@ public class Calculator {
 
         List<String> rpnTokens = convert(tokens);
 
-        return calc(rpnTokens);
+        return rpnTokens != null ? calc(rpnTokens) : null;
     }
 
 
@@ -36,7 +36,7 @@ public class Calculator {
 
         List<String> rpnTokens = convert(tokens);
 
-        return calc(rpnTokens);
+        return rpnTokens != null ? calc(rpnTokens) : null;
     }
 
     private Float calc(List<String> tokens) {
@@ -52,7 +52,7 @@ public class Calculator {
             }
         }
 
-        return numbers.pop();
+        return numbers.isEmpty() ? null : numbers.pop();
     }
 
     private List<String> convert(String[] tokens) {
@@ -112,9 +112,10 @@ public class Calculator {
     private boolean calc(Stack<Float> operands, String operator) {
         float b, a;
 
-        if (operands.size() == 1) {
+        if (operands.isEmpty()) {
+            return false;
+        } else if (operands.size() == 1) {
             b = operands.pop();
-
             switch (operator) {
                 case Constants.PLUS:
                     operands.push(b);
@@ -123,9 +124,9 @@ public class Calculator {
                     operands.push(-b);
                     return true;
                 default:
-                    throw new IllegalArgumentException("Unknown operator " + operator);
+                    System.out.println("Unknown operator " + operator);
+                    return false;
             }
-
         } else {
             b = operands.pop();
             a = operands.pop();
@@ -146,7 +147,8 @@ public class Calculator {
                     operands.push((float) Math.pow(a, b));
                     return true;
                 default:
-                    throw new IllegalArgumentException("Unknown operator " + operator);
+                    System.out.println("Unknown operator " + operator);
+                    return false;
             }
         }
     }

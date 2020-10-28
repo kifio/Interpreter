@@ -10,10 +10,6 @@ import java.util.HashMap;
 public class Formatter {
 
     public static String getStringWithSpaces(String line) {
-        return getStringWithSpaces(line, Constants.SYMBOLS);
-    }
-
-    public static String getStringWithSpaces(String line, String[] symbols) {
         String formattedLine = line;
         for (String symbol : Constants.SYMBOLS) {
             formattedLine = formattedLine.replace(symbol, Constants.SPACE + symbol + Constants.SPACE);

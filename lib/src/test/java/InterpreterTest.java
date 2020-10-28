@@ -6,31 +6,90 @@ import java.util.Arrays;
 
 public class InterpreterTest {
 
+    private final Interpreter interpreter = new Interpreter();
+
     @Test
-    void testSimpliestProgram() {
-        String code = "out 44.0 + 56";
-        Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
-        Assertions.assertEquals(Float.floatToIntBits(100F),
-                Float.floatToIntBits(
-                        Float.parseFloat(interpreterOutput.output)
-                )
-        );
+    void testSingleLinePrograms() {
+        Interpreter.Output interpreterOutput = interpreter.interpret("out 44.0 + 56");
+        Assertions.assertEquals("100.0", interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
+        interpreter.reset();
+
+        interpreterOutput = interpreter.interpret("out 44.0 + 56)");
+        Assertions.assertTrue(interpreterOutput.output.isEmpty());
+        Assertions.assertFalse(interpreterOutput.errors.isEmpty());
+        interpreter.reset();
+
+        interpreterOutput = interpreter.interpret("out (44.0 + 56");
+        Assertions.assertTrue(interpreterOutput.output.isEmpty());
+        Assertions.assertFalse(interpreterOutput.errors.isEmpty());
+        interpreter.reset();
+
+        interpreterOutput = interpreter.interpret("(+ 56");
+        Assertions.assertTrue(interpreterOutput.output.isEmpty());
+        Assertions.assertFalse(interpreterOutput.errors.isEmpty());
+        interpreter.reset();
+
+        interpreterOutput = interpreter.interpret("out (56");
+        Assertions.assertTrue(interpreterOutput.output.isEmpty());
+        Assertions.assertFalse(interpreterOutput.errors.isEmpty());
+        interpreter.reset();
+
+        interpreterOutput = interpreter.interpret("out 56)");
+        Assertions.assertTrue(interpreterOutput.output.isEmpty());
+        Assertions.assertFalse(interpreterOutput.errors.isEmpty());
+        interpreter.reset();
+        interpreterOutput = interpreter.interpret("out 56 + )");
+        Assertions.assertTrue(interpreterOutput.output.isEmpty());
+        Assertions.assertFalse(interpreterOutput.errors.isEmpty());
+        interpreter.reset();
     }
 
     @Test
     void testSimpleProgram() {
-        float number = 42F;
         String code =
-                "var count = " + number + "\n" +
+                "var count = 42\n" +
                         "out count";
-        Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
-        Assertions.assertEquals(Float.floatToIntBits(number),
-                Float.floatToIntBits(
-                        Float.parseFloat(interpreterOutput.output)
-                )
-        );
+        Interpreter.Output interpreterOutput = interpreter.interpret(code);
+        Assertions.assertEquals("42.0", interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
+        interpreter.reset();
+
+        code = "var count = 44.0 + 56)\n"+
+                "out count";
+        interpreterOutput = interpreter.interpret(code);
+        Assertions.assertTrue(interpreterOutput.output.isEmpty());
+        Assertions.assertFalse(interpreterOutput.errors.isEmpty());
+        interpreter.reset();
+
+        code = "var count = (44.0 + 56\n"+
+                "out count";
+        interpreterOutput = interpreter.interpret(code);
+        Assertions.assertTrue(interpreterOutput.output.isEmpty());
+        Assertions.assertFalse(interpreterOutput.errors.isEmpty());
+        interpreter.reset();
+
+        code = "var count = (44.0 + 56\n"+
+                "out count";
+        interpreterOutput = interpreter.interpret(code);
+        Assertions.assertTrue(interpreterOutput.output.isEmpty());
+        Assertions.assertFalse(interpreterOutput.errors.isEmpty());
+        interpreter.reset();
+
+        code = "var count = ( + \n"+
+                "out count";
+        interpreterOutput = interpreter.interpret(code);
+        Assertions.assertTrue(interpreterOutput.output.isEmpty());
+        Assertions.assertFalse(interpreterOutput.errors.isEmpty());
+        interpreter.reset();
+
+
+        code = "var count = ( ) \n"+
+                "out count";
+        interpreterOutput = interpreter.interpret(code);
+        Assertions.assertTrue(interpreterOutput.output.isEmpty());
+        Assertions.assertFalse(interpreterOutput.errors.isEmpty());
+        interpreter.reset();
     }
 
     @Test

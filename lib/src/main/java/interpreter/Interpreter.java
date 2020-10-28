@@ -21,6 +21,11 @@ public class Interpreter {
 
         public final String errors;
 
+        Output() {
+            this.output = "";
+            this.errors = "";
+        }
+
         Output(List<String> output, List<String> errors) {
             this.output = String.join("\n", output);
             this.errors = String.join("\n", errors);
@@ -73,6 +78,8 @@ public class Interpreter {
         READ_REDUCE
     }
 
+    private boolean shouldStop = false;
+
     private final HashMap<String, String> numbers = new HashMap<>();
     private final HashMap<String, float[]> sequences = new HashMap<>();
 
@@ -99,8 +106,14 @@ public class Interpreter {
 
     public Interpreter.Output interpret(String code) {
         Scanner scanner = new Scanner(code);
+        shouldStop = false;
 
         while (scanner.hasNextLine()) {
+            if (shouldStop) {
+                reset();
+                return new Interpreter.Output();
+            }
+
             String line = scanner.nextLine();
             if (!processLine(line)) {
                 return new Interpreter.Output(output, errors);
@@ -349,5 +362,24 @@ public class Interpreter {
         }
 
         return true;
+    }
+
+    public void stop() {
+        shouldStop = true;
+    }
+
+    public void reset() {
+        numbers.clear();
+        sequences.clear();
+
+        output.clear();
+        errors.clear();
+
+        currentExpression.setLength(0);
+        currentSequence.setLength(0);
+        currentStringConstant.setLength(0);
+        currentOut.setLength(0);
+
+        mapReader.reset();
     }
 }
