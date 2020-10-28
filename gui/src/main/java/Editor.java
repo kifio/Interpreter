@@ -1,102 +1,167 @@
+import interpreter.Interpreter;
+
 import javax.swing.*;
 import javax.swing.border.MatteBorder;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.Document;
 import java.awt.*;
 
-public class Editor extends JFrame {
+class Editor extends JFrame {
+    
+    private static final Insets MARGIN = new Insets(8, 8, 8, 8);
+    private static final Font FONT = new Font("Monospaced", Font.PLAIN, 14);
 
-    private static final double EDITOR_PANE_WEIGHT = 0.8;
-    private static final double OUTPUT_PANE_HORIZONTAL_WEIGHT = 1.0 - EDITOR_PANE_WEIGHT;
-    private static final double OUTPUT_PANE_VERTICAL_WEIGHT = EDITOR_PANE_WEIGHT;
-    private static final double ERRORS_PANE_HORIZONTAL_WEIGHT = 1.0;
-    private static final double ERRORS_PANE_VERTICAL_WEIGHT = 1.0 - EDITOR_PANE_WEIGHT;
+    private JEditorPane outputField;
+    private JEditorPane errorsField;
 
-    private static final Color BACKGROUND = new Color(46, 46, 46);
-    private static final Color GRAY = new Color(121, 121, 121);
+    private final Highlighter highlighter = new Highlighter();
+    private final OnProgramInterpretedListener listener = new OnProgramInterpretedListener() {
+        @Override
+        public void onProgramInterpreted(Interpreter.Output output) {
+            outputField.setText(output.output);
+            errorsField.setText(output.errors);
+        }
 
-    private final GridBagConstraints constraints = new GridBagConstraints();
+    };
 
-    private Editor(String name) {
+    Editor(String name) {
         super(name);
         setResizable(true);
     }
 
-    private void createAndShowGUI() {
+    void createAndShowGUI() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new GridBagLayout());
-        setPreferredSize(new Dimension(400, 240));
-        setBackground(BACKGROUND);
+        setPreferredSize(new Dimension(800, 600));
+        setBackground(Colors.BACKGROUND);
 
-        JEditorPane input = new JEditorPane();
-        input.setText("input");
-        addEditorPane(input,
-                BorderFactory.createMatteBorder(0, 0, 0, 0, GRAY),
-                EDITOR_PANE_WEIGHT,
-                EDITOR_PANE_WEIGHT,
-                2,
-                2,
-                0,
-                0);
-
-        JEditorPane output = new JEditorPane();
-        output.setText("output");
-
-        addEditorPane(output,
-                BorderFactory.createMatteBorder(0, 1, 0, 0, GRAY),
-                OUTPUT_PANE_HORIZONTAL_WEIGHT,
-                OUTPUT_PANE_VERTICAL_WEIGHT,
-                1,
-                2,
-                2, 0);
-
-        JEditorPane errors = new JEditorPane();
-        errors.setText("errors");
-
-        addEditorPane(errors,
-                BorderFactory.createMatteBorder(1, 0, 0, 0, GRAY),
-                ERRORS_PANE_HORIZONTAL_WEIGHT,
-                ERRORS_PANE_VERTICAL_WEIGHT,
-                3,
-                1,
-                0, 2);
+        addOutput();
+        addErrors();
+        addInput();
 
         pack();
+        setLocationRelativeTo(null);
         setVisible(true);
+    }
+
+    private void addInput() {
+        JEditorPane input = new JTextPane(new EditorDocument(highlighter, listener));
+        input.setText("var foo = 100.0\nout foo");
+        addEditorPane(input,
+                BorderFactory.createMatteBorder(0, 0, 0, 0, Colors.BACKGROUND),
+                BorderLayout.CENTER);
+    }
+
+    private void addOutput() {
+        outputField = new JTextPane(new OutputDocument(highlighter.commonAttrs));
+        outputField.setEditable(false);
+        outputField.setPreferredSize(new Dimension(120, super.getMinimumSize().height));
+        addEditorPane(outputField,
+                BorderFactory.createMatteBorder(0, 1, 0, 0, Colors.GRAY),
+                BorderLayout.EAST);
+    }
+
+    private void addErrors() {
+        errorsField = new JTextPane(new OutputDocument(highlighter.errorsAttrs));
+        errorsField.setEditable(false);
+        errorsField.setPreferredSize(new Dimension(super.getMinimumSize().width, 80));
+
+        addEditorPane(errorsField,
+                BorderFactory.createMatteBorder(1, 0, 0, 0, Colors.GRAY),
+                BorderLayout.SOUTH);
     }
 
     private void addEditorPane(
             JEditorPane editorPane,
             MatteBorder border,
-            double weightx,
-            double weighty,
-            int gridwidth,
-            int gridheight,
-            int gridx,
-            int gridy
+            String constraints
     ) {
 
-        constraints.fill = GridBagConstraints.BOTH;
-        constraints.weightx = weightx;
-        constraints.weighty = weighty;
-        constraints.gridwidth = gridwidth;
-        constraints.gridheight = gridheight;
-        constraints.gridx = gridx;
-        constraints.gridy = gridy;
+        editorPane.setFont(FONT);
+        editorPane.setMargin(MARGIN);
 
         JScrollPane scrollPane = new JScrollPane(editorPane);
         scrollPane.setBorder(border);
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
 
-        editorPane.setBackground(new Color(46, 46, 46));
+        editorPane.setBackground(Colors.BACKGROUND);
         getContentPane().add(scrollPane, constraints);
     }
 
-    public static void main(String[] args) {
-        Editor main = new Editor("Editor");
-        javax.swing.SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                main.createAndShowGUI();
+    private static class EditorDocument extends DefaultStyledDocument {
+
+        private final Highlighter highlighter;
+        private final Interpreter interpreter = new Interpreter();
+        private final OnProgramInterpretedListener listener;
+
+        EditorDocument(Highlighter highlighter, OnProgramInterpretedListener listener) {
+            this.highlighter = highlighter;
+            this.listener = listener;
+        }
+
+        public void insertString(int offset, String str, AttributeSet a) throws BadLocationException {
+            super.insertString(offset, str, a);
+            String text = getText(0, getLength());
+            highlightText(text);
+            interpreter.stop();
+            listener.onProgramInterpreted(interpreter.interpret(text));
+        }
+
+        public void remove(int offs, int len) throws BadLocationException {
+            super.remove(offs, len);
+            interpreter.stop();
+            listener.onProgramInterpreted(interpreter.interpret(getText(0, getLength())));
+        }
+
+        private void highlightText(String text) {
+            System.out.println(text);
+            setCharacterAttributes(0, text.length(), highlighter.commonAttrs, false);
+
+            for (String word : highlighter.keyWords) {
+                highlightWord(word, text);
             }
-        });
+
+            for (String word : highlighter.functions) {
+                highlightWord(word, text);
+            }
+        }
+
+        private void highlightWord(String word, String text) {
+            int searchIndex = 0;
+            while (true) {
+                searchIndex = text.indexOf(word, searchIndex);
+                if (searchIndex == -1) {
+                    return;
+                }
+
+                setCharacterAttributes(searchIndex, word.length(), highlighter.getAttributeSetForToken(word), false);
+                searchIndex += word.length();
+            }
+        }
+    }
+
+    private static class OutputDocument extends DefaultStyledDocument {
+
+        private final AttributeSet attributeSet;
+
+        OutputDocument(AttributeSet attributeSet) {
+            this.attributeSet = attributeSet;
+        }
+
+        public void insertString(int offset, String str, AttributeSet a) throws BadLocationException {
+            super.insertString(offset, str, a);
+            highlightText(getText(0, getLength()));
+        }
+
+        @Override
+        public void remove(int offs, int len) throws BadLocationException {
+            super.remove(offs, len);
+        }
+
+        private void highlightText(String text) {
+            setCharacterAttributes(0, text.length(), attributeSet, false);
+        }
     }
 }

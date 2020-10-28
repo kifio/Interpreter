@@ -5,8 +5,6 @@ import provider.NumbersProvider;
 import tools.Constants;
 import tools.Validator;
 
-import java.util.HashMap;
-
 public class Formatter {
 
     public static String getStringWithSpaces(String line) {

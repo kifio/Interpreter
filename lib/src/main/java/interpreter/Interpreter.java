@@ -105,6 +105,7 @@ public class Interpreter {
     private State previousState = State.UNDEFINED;
 
     public Interpreter.Output interpret(String code) {
+        reset();
         Scanner scanner = new Scanner(code);
         shouldStop = false;
 

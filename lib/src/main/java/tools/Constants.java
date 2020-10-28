@@ -6,6 +6,8 @@ public interface Constants {
     public static final String VARIABLE = "var";
     public static final String PRINT = "print";
     public static final String OUT = "out";
+
+    // Functions
     public static final String MAP = "map";
     public static final String REDUCE = "reduce";
 
