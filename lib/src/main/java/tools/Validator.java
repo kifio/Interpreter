@@ -1,5 +1,6 @@
 package tools;
 
+import calculator.Calculator;
 import formatter.Formatter;
 
 public class Validator {
@@ -38,9 +39,13 @@ public class Validator {
         return true;
     }
 
-    public static boolean isValidLambdaExpression(String expression, String[] existedVariables) {
+    public static boolean isValidLambdaExpression(
+            Calculator calculator,
+            String expression,
+            String[] existedVariables
+    ) {
         String[] expressionTokens = Formatter.getStringWithSpaces(expression).split(Constants.SPACE);
-
+        System.out.println(expression);
         for (String token : expressionTokens) {
             if (token.isEmpty()) {
                 continue;
@@ -51,9 +56,10 @@ public class Validator {
                     && !variableExists(existedVariables, token)) {
                 return false;
             }
+
         }
 
-        return true;
+        return calculator.calc(expression, existedVariables[0], "1") != null;
     }
 
     private static boolean variableExists(String[] variables, String variable) {

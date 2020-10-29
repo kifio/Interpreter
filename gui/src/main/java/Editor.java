@@ -5,11 +5,11 @@ import javax.swing.border.MatteBorder;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
-import javax.swing.text.Document;
 import java.awt.*;
+import java.util.concurrent.ExecutionException;
 
 class Editor extends JFrame {
-    
+
     private static final Insets MARGIN = new Insets(8, 8, 8, 8);
     private static final Font FONT = new Font("Monospaced", Font.PLAIN, 14);
 
@@ -20,10 +20,13 @@ class Editor extends JFrame {
     private final OnProgramInterpretedListener listener = new OnProgramInterpretedListener() {
         @Override
         public void onProgramInterpreted(Interpreter.Output output) {
-            outputField.setText(output.output);
+            if (output.output.length() > 1000) {
+                outputField.setText("Output is too large and cannot be displayed here. Save it to file to read it.");
+            } else {
+                outputField.setText(output.output);
+            }
             errorsField.setText(output.errors);
         }
-
     };
 
     Editor(String name) {
@@ -36,8 +39,13 @@ class Editor extends JFrame {
         setPreferredSize(new Dimension(800, 600));
         setBackground(Colors.BACKGROUND);
 
-        addOutput();
-        addErrors();
+        JPanel outputPanel = new JPanel();
+        outputPanel.setLayout(new GridLayout(1, 2));
+
+        addOutput(outputPanel);
+        addErrors(outputPanel);
+
+        getContentPane().add(outputPanel, BorderLayout.SOUTH);
         addInput();
 
         pack();
@@ -49,31 +57,38 @@ class Editor extends JFrame {
         JEditorPane input = new JTextPane(new EditorDocument(highlighter, listener));
         input.setText("var foo = 100.0\nout foo");
         addEditorPane(input,
-                BorderFactory.createMatteBorder(0, 0, 0, 0, Colors.BACKGROUND),
+                getContentPane(),
+                BorderFactory.createMatteBorder(0, 0, 1, 0, Colors.BACKGROUND),
                 BorderLayout.CENTER);
     }
 
-    private void addOutput() {
+    private void addOutput(JPanel parent) {
         outputField = new JTextPane(new OutputDocument(highlighter.commonAttrs));
         outputField.setEditable(false);
-        outputField.setPreferredSize(new Dimension(120, super.getMinimumSize().height));
+        outputField.setPreferredSize(new Dimension(super.getMinimumSize().width, 80));
+
         addEditorPane(outputField,
-                BorderFactory.createMatteBorder(0, 1, 0, 0, Colors.GRAY),
-                BorderLayout.EAST);
+                parent,
+                BorderFactory.createMatteBorder(1, 0, 0, 1, Colors.GRAY),
+                null
+        );
     }
 
-    private void addErrors() {
+    private void addErrors(JPanel parent) {
         errorsField = new JTextPane(new OutputDocument(highlighter.errorsAttrs));
         errorsField.setEditable(false);
         errorsField.setPreferredSize(new Dimension(super.getMinimumSize().width, 80));
 
         addEditorPane(errorsField,
-                BorderFactory.createMatteBorder(1, 0, 0, 0, Colors.GRAY),
-                BorderLayout.SOUTH);
+                parent,
+                BorderFactory.createMatteBorder(1, 1, 0, 0, Colors.GRAY),
+                null
+        );
     }
 
     private void addEditorPane(
             JEditorPane editorPane,
+            Container container,
             MatteBorder border,
             String constraints
     ) {
@@ -87,14 +102,14 @@ class Editor extends JFrame {
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
 
         editorPane.setBackground(Colors.BACKGROUND);
-        getContentPane().add(scrollPane, constraints);
+        container.add(scrollPane, constraints);
     }
 
     private static class EditorDocument extends DefaultStyledDocument {
 
         private final Highlighter highlighter;
-        private final Interpreter interpreter = new Interpreter();
         private final OnProgramInterpretedListener listener;
+        private SwingWorker<Interpreter.Output, Void> interpreterWorker;
 
         EditorDocument(Highlighter highlighter, OnProgramInterpretedListener listener) {
             this.highlighter = highlighter;
@@ -105,18 +120,51 @@ class Editor extends JFrame {
             super.insertString(offset, str, a);
             String text = getText(0, getLength());
             highlightText(text);
-            interpreter.stop();
-            listener.onProgramInterpreted(interpreter.interpret(text));
+            interpret(text);
         }
 
         public void remove(int offs, int len) throws BadLocationException {
             super.remove(offs, len);
-            interpreter.stop();
-            listener.onProgramInterpreted(interpreter.interpret(getText(0, getLength())));
+            interpret(getText(0, getLength()));
+        }
+
+        private void interpret(String program) {
+            if (interpreterWorker != null) {
+                interpreterWorker.cancel(true);
+            }
+
+            listener.onProgramInterpreted(new Interpreter.Output("Interpretation...", ""));
+            interpreterWorker = new SwingWorker<Interpreter.Output, Void>() {
+
+                private long start;
+                private long end;
+
+                @Override
+                public Interpreter.Output doInBackground() {
+                    start = System.currentTimeMillis();
+                    return new Interpreter().interpret(program);
+                }
+
+                @Override
+                protected void done() {
+                    super.done();
+                    if (!isCancelled()) {
+                        try {
+                            listener.onProgramInterpreted(get());
+                        } catch (InterruptedException | ExecutionException e) {
+                            listener.onProgramInterpreted(new Interpreter.Output("", e.getMessage()));
+                            e.printStackTrace();
+                        }
+                    }
+                    end = System.currentTimeMillis();
+                    System.out.println("Interpetation took: " + ((end - start)));
+                }
+            };
+
+            interpreterWorker.execute();
         }
 
         private void highlightText(String text) {
-            System.out.println(text);
             setCharacterAttributes(0, text.length(), highlighter.commonAttrs, false);
 
             for (String word : highlighter.keyWords) {

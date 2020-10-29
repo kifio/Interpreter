@@ -14,8 +14,6 @@ import java.util.concurrent.*;
 
 public class MapExecutor extends Executor<float[]> {
 
-    private static final int BATCH_SIZE = 10000;
-
     private String lambdaVariableName;
     private String lambdaExpression;
 
@@ -104,12 +102,15 @@ public class MapExecutor extends Executor<float[]> {
 
     @Override
     public float[] compute() {
-        computeAsync();
+        if (sequence.length < BATCH_MINIMAL_THRESHOLD) {
+            computeSync();
+        } else {
+            computeAsync();
+        }
         return sequence;
     }
 
     private void computeSync() {
-        long start = System.currentTimeMillis();
         for (int i = 0; i < sequence.length; i++) {
             Float item = calculator.calc(
                     lambdaExpression,
@@ -121,25 +122,15 @@ public class MapExecutor extends Executor<float[]> {
                 sequence[i] = item;
             }
         }
-        long end = System.currentTimeMillis();
-        System.out.println("Computations took: " + ((end - start)) );
     }
 
     private void computeAsync() {
-        int parallelOperationsCount = 1 + sequence.length / BATCH_SIZE;
-        ExecutorService executorService = Executors.newCachedThreadPool();
-        List<Runnable> operations = new ArrayList<>(parallelOperationsCount);
+        executorService = Executors.newFixedThreadPool(THREADS_COUNT);
+        List<Runnable> operations = new ArrayList<>(THREADS_COUNT);
 
-        long start = System.currentTimeMillis();
-
-        for (int operationIndex = 0; operationIndex < parallelOperationsCount; operationIndex++) {
+        for (int operationIndex = 0; operationIndex < THREADS_COUNT; operationIndex++) {
             final int index = operationIndex;
-            operations.add(new Runnable() {
-                @Override
-                public void run() {
-                    processBatch(index);
-                }
-            });
+            operations.add(() -> processBatch(index));
         }
 
         List<Future<?>> futures = new ArrayList<>(operations.size());
@@ -152,18 +143,15 @@ public class MapExecutor extends Executor<float[]> {
             try {
                 future.get();
             } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
+                return;
             }
         }
-
-        long end = System.currentTimeMillis();
-        System.out.println("Computations took: " + ((end - start)) );
     }
 
     private void processBatch(final int operationIndex) {
 
-        for (int i = 0; i < BATCH_SIZE; i++) {
-            final int itemIndex = i + (BATCH_SIZE * operationIndex);
+        for (int i = 0; i < BATCH_MINIMAL_THRESHOLD; i++) {
+            final int itemIndex = i + (BATCH_MINIMAL_THRESHOLD * operationIndex);
 
             if (itemIndex >= sequence.length) {
                 return;
@@ -177,6 +165,7 @@ public class MapExecutor extends Executor<float[]> {
             if (item != null) {
                 sequence[i] = item;
             } else {
+                System.out.println("Cannot calc " + lambdaExpression + " for item " + sequence[i]);
                 System.out.println("item at " + itemIndex + " is null");
             }
         }
@@ -201,7 +190,8 @@ public class MapExecutor extends Executor<float[]> {
             return false;
         }
 
-        if (Validator.isValidLambdaExpression(lambdaTokens[1],
+        if (Validator.isValidLambdaExpression(calculator,
+                lambdaTokens[1],
                 new String[]{lambdaTokens[0]})) {
             this.lambdaExpression = lambdaTokens[1];
         } else {

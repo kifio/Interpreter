@@ -7,8 +7,7 @@ public class FunctionReader<T> {
 
     private final StringBuilder functionStringReader = new StringBuilder();
 
-    private int openBracketsNumber = 0;
-    private int closingBracketsNumber = 0;
+    private int bracketsPairsNumber = -1;
 
     public final Executor<T> executor;
 
@@ -16,21 +15,40 @@ public class FunctionReader<T> {
         this.executor = executor;
     }
 
+    private void increaseBracketsPairsNumber() {
+        if (bracketsPairsNumber == -1) {
+            bracketsPairsNumber = 1;
+        } else {
+            bracketsPairsNumber++;
+        }
+    }
+
+    private void decreaseBracketsPairsNumber() {
+        bracketsPairsNumber--;
+    }
+
     public void readNextToken(String token) {
         if (token.equals(Constants.OPENING_BRACKET)) {
-            openBracketsNumber++;
+            increaseBracketsPairsNumber();
         } else if (token.equals(Constants.CLOSING_BRACKET)) {
-            closingBracketsNumber++;
+            decreaseBracketsPairsNumber();
         }
 
         functionStringReader.append(token);
     }
 
+    public void readNextChar(char c) {
+        if (c == '(') {
+            increaseBracketsPairsNumber();
+        } else if (c == ')') {
+            decreaseBracketsPairsNumber();
+        }
+        functionStringReader.append(c);
+    }
+
     // Function should have similar counts for open and closed brackets to be completed.
     public boolean isCompleted() {
-        return openBracketsNumber > 0
-                && closingBracketsNumber > 0
-                && openBracketsNumber == closingBracketsNumber;
+        return bracketsPairsNumber == 0;
     }
 
     public boolean validate() {
@@ -39,8 +57,7 @@ public class FunctionReader<T> {
 
     public void reset() {
         functionStringReader.setLength(0);
-        openBracketsNumber = 0;
-        closingBracketsNumber = 0;
+        bracketsPairsNumber = -1;
         executor.reset();
     }
 }
