@@ -12,9 +12,11 @@ public class Calculator {
     public Float calc(String expression, String variable, String value) {
         String[] tokens = Formatter.getStringWithSpaces(expression).split(Constants.SPACE);
 
-        for (int i = 0; i < tokens.length; i++) {
-            if (tokens[i].equals(variable)) {
-                tokens[i] = value;
+        if (value != null && variable != null) {
+            for (int i = 0; i < tokens.length; i++) {
+                if (tokens[i].equals(variable)) {
+                    tokens[i] = value;
+                }
             }
         }
 
@@ -59,9 +61,24 @@ public class Calculator {
         ArrayList<String> result = new ArrayList<>();
         ArrayList<String> operators = new ArrayList<>();
 
-        for (String s : tokens) {
-            String token = s.trim();
-            if (Validator.isNumber(token)) {
+        for (int i = 0; i < tokens.length; i++) {
+            String token = tokens[i].trim();
+
+            if (isUnarySign(token, i, tokens, result)) {
+                i++;
+                switch (token) {
+                    case Constants.PLUS:
+                        result.add(tokens[i]);
+                        break;
+                    case Constants.MINUS:
+                        float f = Float.parseFloat(tokens[i]);
+                        String number = String.valueOf(-f);
+                        result.add(number);
+                        break;
+                    default:
+                        return null;
+                }
+            } else if (Validator.isNumber(token)) {
                 result.add(token);
             } else if (isOpeningBracket(token)) {
                 operators.add(token);
@@ -98,6 +115,8 @@ public class Calculator {
                     }
                 }
                 operators.add(token);
+            } else if (!tokens[i].isEmpty()) {
+                return null;
             }
         }
 
@@ -109,25 +128,17 @@ public class Calculator {
         return result;
     }
 
+    private boolean isUnarySign(String token, int i, String[] tokens, ArrayList<String> result) {
+        boolean isUnary = Validator.isUnarySign(token);
+        boolean isInCorrectPlace = result.isEmpty() || i == 0 || Validator.isPreUnarySign(tokens[i - 1]);
+        boolean isApplicable = (i < tokens.length - 1) && Validator.isNumber(tokens[i + 1]);
+        return isUnary && isInCorrectPlace && isApplicable;
+    }
+
     private boolean calc(Stack<Float> operands, String operator) {
         float b, a;
 
-        if (operands.isEmpty()) {
-            return false;
-        } else if (operands.size() == 1) {
-            b = operands.pop();
-            switch (operator) {
-                case Constants.PLUS:
-                    operands.push(b);
-                    return true;
-                case Constants.MINUS:
-                    operands.push(-b);
-                    return true;
-                default:
-                    System.out.println("Unknown operator " + operator);
-                    return false;
-            }
-        } else {
+        if (operands.size() >= 2) {
             b = operands.pop();
             a = operands.pop();
             switch (operator) {
@@ -150,6 +161,8 @@ public class Calculator {
                     System.out.println("Unknown operator " + operator);
                     return false;
             }
+        } else {
+            return false;
         }
     }
 

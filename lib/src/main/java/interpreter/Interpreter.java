@@ -169,6 +169,7 @@ public class Interpreter {
                 return addConstantToOutput(token);
             case READ_OUT:
                 currentOut.append(token);
+                currentOut.append(Constants.SPACE);
                 return true;
             default:
                 return false;
@@ -247,7 +248,7 @@ public class Interpreter {
         if (token.equals(Constants.END_SEQUENCE)) {
             SequenceParserResult sequenceParserResult = Formatter.formatSequence(
                     calculator,
-                    currentSequence.toString(),
+                    currentSequence.toString().trim(),
                     numbersProvider
             );
 
@@ -302,9 +303,8 @@ public class Interpreter {
             currentStringConstant.setLength(0);
         } else if (currentState == State.READ_OUT) {
             readOut(currentOut.toString().trim());
-        } else {
-            errors.add("Invalid sequence");
         }
+
         mapReader.reset();
         currentOut.setLength(0);
         currentExpression.setLength(0);
@@ -320,7 +320,7 @@ public class Interpreter {
             return;
         }
 
-        SequenceParserResult formattedSequence = Formatter.formatSequence(calculator, out, numbersProvider);
+        SequenceParserResult formattedSequence = Formatter.formatSequence(calculator, out.trim(), numbersProvider);
         if (formattedSequence.sequence != null) {
             output.add(Arrays.toString(formattedSequence.sequence));
             return;

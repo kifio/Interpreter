@@ -7,9 +7,9 @@ public class CalculatorTest {
     private static class TestData {
         String expression;
         String converted;
-        float result;
+        Float result;
 
-        TestData(String expression, String converted, float result) {
+        TestData(String expression, String converted, Float result) {
             this.expression = expression;
             this.converted = converted;
             this.result = result;
@@ -103,17 +103,35 @@ public class CalculatorTest {
             )
     };
 
+    private static final TestData[] BAD_TEST_DATA = {
+            new TestData(
+                    "{ 100",
+                    null,
+                    null
+            ),
+            new TestData(
+                    "100 +-",
+                    null,
+                    null
+            ),
+    };
+
 
     @Test
     void testCalculator() {
         Calculator calculator = new Calculator();
+
         for (TestData testDatum : TEST_DATA) {
-            float result = calculator.calc(testDatum.expression, null, null);
+            Float result = calculator.calc(testDatum.expression, null, null);
             System.out.println("actual: " + result + "; expected: " + testDatum.result);
             Assertions.assertEquals(
                     Float.floatToIntBits(result),
                     Float.floatToIntBits(testDatum.result)
             );
+        }
+
+        for (TestData testDatum : BAD_TEST_DATA) {
+            Assertions.assertNull(calculator.calc(testDatum.expression, null, null));
         }
     }
 }

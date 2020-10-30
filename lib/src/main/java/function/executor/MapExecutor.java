@@ -67,7 +67,7 @@ public class MapExecutor extends Executor<float[]> {
     private boolean handleSequence(String sequence) {
         SequenceParserResult sequenceParserResult = Formatter.formatSequence(
                 calculator,
-                sequence,
+                sequence.trim(),
                 numbersProvider);
 
         boolean isSequenceValid = sequenceParserResult.sequence != null

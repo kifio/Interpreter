@@ -5,44 +5,42 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 
 public class InterpreterTest {
-
-    private final Interpreter interpreter = new Interpreter();
-
+    
     @Test
     void testSingleLinePrograms() {
-        Interpreter.Output interpreterOutput = interpreter.interpret("out 44.0 + 56");
+        Interpreter.Output interpreterOutput = new Interpreter().interpret("out 44.0 + 56");
         Assertions.assertEquals("100.0", interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
-        interpreter.reset();
+        
 
-        interpreterOutput = interpreter.interpret("out 44.0 + 56)");
+        interpreterOutput = new Interpreter().interpret("out 44.0 + 56)");
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        interpreter.reset();
+        
 
-        interpreterOutput = interpreter.interpret("out (44.0 + 56");
+        interpreterOutput = new Interpreter().interpret("out (44.0 + 56");
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        interpreter.reset();
+        
 
-        interpreterOutput = interpreter.interpret("(+ 56");
+        interpreterOutput = new Interpreter().interpret("(+ 56");
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        interpreter.reset();
+        
 
-        interpreterOutput = interpreter.interpret("out (56");
+        interpreterOutput = new Interpreter().interpret("out (56");
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        interpreter.reset();
+        
 
-        interpreterOutput = interpreter.interpret("out 56)");
+        interpreterOutput = new Interpreter().interpret("out 56)");
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        interpreter.reset();
-        interpreterOutput = interpreter.interpret("out 56 + )");
+        
+        interpreterOutput = new Interpreter().interpret("out 56 + )");
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        interpreter.reset();
+        
     }
 
     @Test
@@ -50,46 +48,46 @@ public class InterpreterTest {
         String code =
                 "var count = 42\n" +
                         "out count";
-        Interpreter.Output interpreterOutput = interpreter.interpret(code);
+        Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertEquals("42.0", interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
-        interpreter.reset();
+        
 
         code = "var count = 44.0 + 56)\n"+
                 "out count";
-        interpreterOutput = interpreter.interpret(code);
+        interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        interpreter.reset();
+        
 
         code = "var count = (44.0 + 56\n"+
                 "out count";
-        interpreterOutput = interpreter.interpret(code);
+        interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        interpreter.reset();
+        
 
         code = "var count = (44.0 + 56\n"+
                 "out count";
-        interpreterOutput = interpreter.interpret(code);
+        interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        interpreter.reset();
+        
 
         code = "var count = ( + \n"+
                 "out count";
-        interpreterOutput = interpreter.interpret(code);
+        interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        interpreter.reset();
+        
 
 
         code = "var count = ( ) \n"+
                 "out count";
-        interpreterOutput = interpreter.interpret(code);
+        interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        interpreter.reset();
+        
     }
 
     @Test
@@ -257,6 +255,14 @@ public class InterpreterTest {
                 1 * 3, 2 * 2 * 3, 3 * 3 * 3, 4 * 4 * 3, 5 * 5 * 3
         }), interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
+    }
+
+    @Test
+    void testIncorrectMap() {
+        String code = "out {100, 101 102}";
+        Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
+        Assertions.assertTrue(interpreterOutput.output.isEmpty());
+        Assertions.assertFalse(interpreterOutput.errors.isEmpty());
     }
 
     @Test

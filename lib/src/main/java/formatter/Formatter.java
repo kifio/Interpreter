@@ -20,8 +20,15 @@ public class Formatter {
             String currentSequence,
             NumbersProvider numbersProvider
     ) {
-        String[] stringItems = currentSequence.split(Constants.COMMA);
         SequenceParserResult sequenceParserResult = new SequenceParserResult();
+
+        if (!currentSequence.startsWith(Constants.START_SEQUENCE)
+                || !currentSequence.startsWith(Constants.END_SEQUENCE)) {
+            sequenceParserResult.errors.add("Sequence must be wrapped in {}");
+            return sequenceParserResult;
+        }
+
+        String[] stringItems = currentSequence.substring(1, currentSequence.length() - 1).split(Constants.COMMA);
 
         if (stringItems.length != 2) {
             sequenceParserResult.errors.add("Sequence must contains 2 items separated by comma");

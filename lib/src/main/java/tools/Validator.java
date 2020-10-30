@@ -27,6 +27,20 @@ public class Validator {
                 token.equals(Constants.CLOSING_BRACKET);
     }
 
+    public static boolean isUnarySign(String token) {
+        return token.equals(Constants.PLUS) ||
+                token.equals(Constants.MINUS);
+    }
+
+    public static boolean isPreUnarySign(String token) {
+        return token.equals(Constants.PLUS) ||
+                token.equals(Constants.MINUS) ||
+                token.equals(Constants.MULTIPLY) ||
+                token.equals(Constants.DIVIDE) ||
+                token.equals(Constants.POW) ||
+                token.equals(Constants.OPENING_BRACKET);
+    }
+
     public static boolean variableExists(String token) {
         char[] chars = token.toCharArray();
 
