@@ -5,42 +5,42 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 
 public class InterpreterTest {
-    
+
     @Test
     void testSingleLinePrograms() {
         Interpreter.Output interpreterOutput = new Interpreter().interpret("out 44.0 + 56");
         Assertions.assertEquals("100.0", interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
-        
+
 
         interpreterOutput = new Interpreter().interpret("out 44.0 + 56)");
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        
+
 
         interpreterOutput = new Interpreter().interpret("out (44.0 + 56");
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        
+
 
         interpreterOutput = new Interpreter().interpret("(+ 56");
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        
+
 
         interpreterOutput = new Interpreter().interpret("out (56");
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        
+
 
         interpreterOutput = new Interpreter().interpret("out 56)");
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        
+
         interpreterOutput = new Interpreter().interpret("out 56 + )");
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        
+
     }
 
     @Test
@@ -51,35 +51,35 @@ public class InterpreterTest {
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertEquals("42.0", interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
-        
+
 
         code = "var count = 44.0 + 56)\n"+
                 "out count";
         interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        
+
 
         code = "var count = (44.0 + 56\n"+
                 "out count";
         interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        
+
 
         code = "var count = (44.0 + 56\n"+
                 "out count";
         interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        
+
 
         code = "var count = ( + \n"+
                 "out count";
         interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        
+
 
 
         code = "var count = ( ) \n"+
@@ -87,26 +87,21 @@ public class InterpreterTest {
         interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
-        
+
     }
 
     @Test
     void testSimpleProgramWithSyntaxError() {
-        String code =
-                "var count = ," +
-                        "out count";
-        Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
+        Interpreter.Output interpreterOutput = new Interpreter().interpret("var count = ,\n" +
+                "out count");
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
     }
 
     @Test
     void testSimpleProgramWithExpression() {
-        String expr = "42+21+11.5";
-        String code =
-                "var expr = " + expr + "\n" +
-                        "out expr";
-        Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
-        // TODO: Test result of expr, not the expr.
+        Interpreter.Output interpreterOutput = new Interpreter().interpret(
+                "var expr = 42+21+11.5\n" +
+                "out expr");
         Assertions.assertEquals("74.5", interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
     }
@@ -212,36 +207,32 @@ public class InterpreterTest {
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
     }
 
-
-    @Test
-    void testMultipleOut() {
-        String code =
-                "var a = 1\n" +
-                        "var b = 10\n" +
-                        "out a + b\n" +
-                        "var sum = 10 * (a + b) / 2\n" +
-                        "out sum + 0";
-        Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
-        Assertions.assertEquals("11.0\n55.0", interpreterOutput.output);
-        Assertions.assertTrue(interpreterOutput.errors.isEmpty());
-    }
-
-    @Test
-    void testPrint() {
-        String code =                 "print 55.0";
-        Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
-        Assertions.assertEquals("55.0", interpreterOutput.output);
-        Assertions.assertTrue(interpreterOutput.errors.isEmpty());
-    }
-
     @Test
     void testPrintAndOut() {
-        String code =
+        Interpreter.Output interpreterOutput = new Interpreter().interpret(
                 "var o = 10 * (1 + 10) / 2\n" +
                 "print \"o is\"\n" +
-                "out o";
-        Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
+                "out o");
         Assertions.assertEquals("\"o is\"\n55.0", interpreterOutput.output);
+        Assertions.assertTrue(interpreterOutput.errors.isEmpty());
+
+        interpreterOutput = new Interpreter().interpret("print 55.0");
+        Assertions.assertEquals("55.0", interpreterOutput.output);
+        Assertions.assertTrue(interpreterOutput.errors.isEmpty());
+
+        interpreterOutput = new Interpreter().interpret("var a = 1\n" +
+                "var b = 10\n" +
+                "out a + b\n" +
+                "var sum = 10 * (a + b) / 2\n" +
+                "out sum + 0");
+        Assertions.assertEquals("11.0\n55.0", interpreterOutput.output);
+        Assertions.assertTrue(interpreterOutput.errors.isEmpty());
+
+        interpreterOutput = new Interpreter().interpret(
+                "var foo = 100.0\n" +
+                "out {foo, 200}");
+
+        Assertions.assertEquals(Arrays.toString(getSequence(100, 200)), interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
     }
 

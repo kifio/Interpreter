@@ -6,17 +6,15 @@ import tools.Constants;
 import tools.Validator;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class Calculator {
 
     public Float calc(String expression, String variable, String value) {
-        String[] tokens = Formatter.getStringWithSpaces(expression).split(Constants.SPACE);
-
-        if (value != null && variable != null) {
-            for (int i = 0; i < tokens.length; i++) {
-                if (tokens[i].equals(variable)) {
-                    tokens[i] = value;
-                }
+        String[] tokens = Formatter.getStringWithSpaces(expression).split(" +");
+        for (int i = 0; i < tokens.length; i++) {
+            if (tokens[i].equals(variable)) {
+                tokens[i] = value;
             }
         }
 
@@ -27,7 +25,7 @@ public class Calculator {
 
 
     public Float calc(String expression, NumbersProvider numbersProvider) {
-        String[] tokens = Formatter.getStringWithSpaces(expression).split(Constants.SPACE);
+        String[] tokens = Formatter.getStringWithSpaces(expression.trim()).split(" +");
 
         for (int i = 0; i < tokens.length; i++) {
             String valueOfVariable = numbersProvider.getNumberByName(tokens[i]);
@@ -54,7 +52,7 @@ public class Calculator {
             }
         }
 
-        return numbers.isEmpty() ? null : numbers.pop();
+        return numbers.size() != 1 ? null : numbers.pop();
     }
 
     private List<String> convert(String[] tokens) {

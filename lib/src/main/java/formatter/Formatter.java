@@ -23,7 +23,7 @@ public class Formatter {
         SequenceParserResult sequenceParserResult = new SequenceParserResult();
 
         if (!currentSequence.startsWith(Constants.START_SEQUENCE)
-                || !currentSequence.startsWith(Constants.END_SEQUENCE)) {
+                || !currentSequence.endsWith(Constants.END_SEQUENCE)) {
             sequenceParserResult.errors.add("Sequence must be wrapped in {}");
             return sequenceParserResult;
         }
@@ -66,7 +66,7 @@ public class Formatter {
             NumbersProvider numbersProvider
     ) {
 
-        String[] expressionTokens = Formatter.getStringWithSpaces(expression).split(Constants.SPACE);
+        String[] expressionTokens = Formatter.getStringWithSpaces(expression).split(" +");
         ExpressionParserResult expressionParserResult = new ExpressionParserResult();
         StringBuilder expressionBuilder = new StringBuilder();
         for (String token : expressionTokens) {

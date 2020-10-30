@@ -58,7 +58,7 @@ public class Validator {
             String expression,
             String[] existedVariables
     ) {
-        String[] expressionTokens = Formatter.getStringWithSpaces(expression).split(Constants.SPACE);
+        String[] expressionTokens = Formatter.getStringWithSpaces(expression).split(" +");
         System.out.println(expression);
         for (String token : expressionTokens) {
             if (token.isEmpty()) {

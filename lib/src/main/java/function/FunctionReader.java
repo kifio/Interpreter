@@ -52,7 +52,7 @@ public class FunctionReader<T> {
     }
 
     public boolean validate() {
-        return executor.validate(functionStringReader.toString());
+        return executor.validate(functionStringReader.toString().trim());
     }
 
     public void reset() {

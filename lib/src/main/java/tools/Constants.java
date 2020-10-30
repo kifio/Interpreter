@@ -1,5 +1,9 @@
 package tools;
 
+import java.util.regex.Pattern;
+
+import sun.misc.Regexp;
+
 public interface Constants {
 
     // Keywords

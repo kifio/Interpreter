@@ -327,7 +327,7 @@ public class Interpreter {
         }
 
         if (out.startsWith(Constants.MAP)) {
-            printMap(out.substring(3));
+            printMap(out.substring(4));
         } else if (sequences.containsKey(out)) {
             output.add(Arrays.toString(sequences.get(out)));
         } else {
@@ -351,7 +351,7 @@ public class Interpreter {
             mapReader.readNextChar(c);
         }
 
-        if (mapReader.isCompleted() && mapReader.executor.validate(out)) {
+        if (mapReader.isCompleted() && mapReader.executor.validate(out.trim())) {
             output.add(Arrays.toString(mapReader.executor.compute()));
         } else {
             errors.add("Cannot apply map");

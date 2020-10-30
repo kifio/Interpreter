@@ -34,10 +34,7 @@ public class MapExecutor extends Executor<float[]> {
             return false;
         }
 
-        tokens[0] = functionString.substring(1, separatorIndex)
-                .replace(Constants.START_SEQUENCE, Constants.SPACE)
-                .replace(Constants.END_SEQUENCE, Constants.SPACE)
-                .trim();
+        tokens[0] = functionString.substring(1, separatorIndex).trim();
 
         tokens[1] = functionString.substring(separatorIndex + 1, functionString.length() - 1)
                 .replace("- >", "->")
@@ -89,7 +86,7 @@ public class MapExecutor extends Executor<float[]> {
         if (token.startsWith(Constants.MAP)) {
             token = token.substring(3);
             MapExecutor nestedExecutor = new MapExecutor(calculator, sequenceProvider, numbersProvider);
-            if (nestedExecutor.validate(token)) {
+            if (nestedExecutor.validate(token.trim())) {
                 this.sequence = nestedExecutor.compute();
                 return true;
             } else {
