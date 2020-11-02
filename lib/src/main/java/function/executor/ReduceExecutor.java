@@ -9,6 +9,7 @@ import tools.Constants;
 import tools.Validator;
 
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -73,12 +74,50 @@ public class ReduceExecutor extends Executor<Float> {
     @Override
     public Float compute() {
 //        if (sequence.length < BATCH_MINIMAL_THRESHOLD) {
-        return computeSync();
+            return computeSync();
 //        } else {
-//            computeAsync();
+//            return computeAsync();
 //        }
-//        return sequence;
     }
+
+    private Float computeAsync() {
+        executorService = Executors.newFixedThreadPool(THREADS_COUNT);
+        int operationsCount = (sequence.length / BATCH_MINIMAL_THRESHOLD) + 1;
+
+        List<Callable<Float>> operations = new ArrayList<>(operationsCount);
+        List<Float> results = new ArrayList<>();
+
+        // Divide sequence to a few batches and reduce them asynchronously.
+        for (int operationIndex = 0; operationIndex < operationsCount; operationIndex++) {
+            final int index = operationIndex;
+            operations.add(() -> processBatch(index));
+        }
+
+        List<Future<Float>> futures = new ArrayList<>(operations.size());
+
+        for (Callable<Float> callable : operations) {
+            futures.add(executorService.submit(callable));
+        }
+
+        for (Future<Float> future : futures) {
+            try {
+                Float result = future.get();
+                if (result != null) { results.add(result); }
+            } catch (InterruptedException | ExecutionException e) {
+                return null;
+            }
+        }
+
+        // Take all results and reduce them with base element synchronously.
+        this.sequence = new float[results.size()];
+
+        for (int i = 0; i < sequence.length; i++) {
+            this.sequence[i] = results.get(i);
+        }
+
+        return computeSync();
+    }
+
 
     private Float computeSync() {
         Map<String, String> variables = new HashMap<>();
@@ -97,51 +136,33 @@ public class ReduceExecutor extends Executor<Float> {
         return calculator.calc(lambdaExpression, variables);
     }
 
-    private void computeAsync() {
-        executorService = Executors.newFixedThreadPool(THREADS_COUNT);
-        List<Runnable> operations = new ArrayList<>(THREADS_COUNT);
+    private Float processBatch(final int operationIndex) {
 
-        for (int operationIndex = 0; operationIndex < THREADS_COUNT; operationIndex++) {
-            final int index = operationIndex;
-            operations.add(() -> processBatch(index));
+        Map<String, String> variables = new HashMap<>();
+        int counter = BATCH_MINIMAL_THRESHOLD * operationIndex;
+
+        if (counter >= sequence.length) {
+            return null;
         }
 
-        List<Future<?>> futures = new ArrayList<>(operations.size());
+        int limit = BATCH_MINIMAL_THRESHOLD * (operationIndex + 1);
 
-        for (Runnable runnable : operations) {
-            futures.add(executorService.submit(runnable));
-        }
+        System.out.println("processBatch from " + counter + " until " + limit );
 
-        for (Future<?> future : futures) {
-            try {
-                future.get();
-            } catch (InterruptedException | ExecutionException e) {
-                return;
+        float value = sequence[counter];
+        counter++;
+
+        while (counter < limit) {
+            if (counter >= sequence.length) {
+                return value;
             }
+            variables.put(lambdaVariableNames[0], String.valueOf(value));
+            variables.put(lambdaVariableNames[1], String.valueOf(sequence[counter]));
+            value = calculator.calc(lambdaExpression, variables);
+            counter++;
         }
-    }
 
-    private void processBatch(final int operationIndex) {
-
-//        for (int i = 0; i < BATCH_MINIMAL_THRESHOLD; i++) {
-//            final int itemIndex = i + (BATCH_MINIMAL_THRESHOLD * operationIndex);
-//
-//            if (itemIndex >= sequence.length) {
-//                return;
-//            }
-//
-//            Float item = calculator.calc(
-//                    lambdaExpression, lambdaVariableName,
-//                    String.valueOf(sequence[itemIndex])
-//            );
-//
-//            if (item != null) {
-//                sequence[i] = item;
-//            } else {
-//                System.out.println("Cannot calc " + lambdaExpression + " for item " + sequence[i]);
-//                System.out.println("item at " + itemIndex + " is null");
-//            }
-//        }
+        return value;
     }
 
     private boolean parseLambda(String lambda) {

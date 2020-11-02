@@ -1,4 +1,4 @@
-package presenter;
+package controller;
 
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;

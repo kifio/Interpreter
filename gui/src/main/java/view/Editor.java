@@ -1,19 +1,18 @@
 package view;
 
+import controller.InputDocument;
+import controller.OnProgramInterpretedListener;
+import controller.OutputController;
+import controller.OutputDocument;
 import interpreter.Interpreter;
 import model.Colors;
 import model.Highlighter;
-import presenter.InputDocument;
-import presenter.OnProgramInterpretedListener;
-import presenter.OutputDocument;
 
 import javax.swing.*;
 import javax.swing.border.MatteBorder;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.DefaultStyledDocument;
 import java.awt.*;
-import java.util.concurrent.ExecutionException;
+
+import static model.Constants.*;
 
 public class Editor extends JFrame {
 
@@ -22,17 +21,37 @@ public class Editor extends JFrame {
 
     private JEditorPane outputField;
     private JEditorPane errorsField;
+    private JMenuItem menuItem;
 
+    private final OutputController outputController = new OutputController();
     private final Highlighter highlighter = new Highlighter();
+
     private final OnProgramInterpretedListener listener = new OnProgramInterpretedListener() {
+
+        @Override
+        public void onStartInterpretation() {
+            setMenuItemEnabled(false);
+            outputController.setOutput(null);
+            outputField.setText(INTERPRETATION);
+            errorsField.setText("");
+        }
+
         @Override
         public void onProgramInterpreted(Interpreter.Output output) {
+            outputController.setOutput(output.output);
             if (output.output.length() > 1000) {
-                outputField.setText("Output is too large and cannot be displayed here. Save it to file to read it.");
+                outputField.setText(OUTPUT_IS_TOO_LARGE);
             } else {
                 outputField.setText(output.output);
             }
             errorsField.setText(output.errors);
+            setMenuItemEnabled(true);
+        }
+
+        private void setMenuItemEnabled(boolean enabled) {
+            if (menuItem != null) {
+                menuItem.setEnabled(enabled);
+            }
         }
     };
 
@@ -55,14 +74,34 @@ public class Editor extends JFrame {
         getContentPane().add(outputPanel, BorderLayout.SOUTH);
         addInput();
 
+        setupMenu();
         pack();
         setLocationRelativeTo(null);
         setVisible(true);
     }
 
+    private void setupMenu() {
+        System.setProperty("apple.laf.useScreenMenuBar", "true");
+
+        JMenu menu = new JMenu(MENU_TITLE);
+        menuItem = new JMenuItem(SAVE_OUTPUT_ITEM_TITLE);
+        menuItem.getAccessibleContext()
+                .setAccessibleDescription(SAVE_OUTPUT_ITEM_DESCRIPTION);
+
+        menuItem.addActionListener(event -> {
+            outputController.saveToFile();
+        });
+
+        menu.add(menuItem);
+
+        JMenuBar menuBar = new JMenuBar();
+        menuBar.add(menu);
+        setJMenuBar(menuBar);
+    }
+
     private void addInput() {
         JEditorPane input = new JTextPane(new InputDocument(highlighter, listener));
-        input.setText("var foo = 100.0\nout foo");
+        input.setText(CODE_PLACEHOLDER);
         addEditorPane(input,
                 getContentPane(),
                 BorderFactory.createMatteBorder(0, 0, 1, 0, Colors.BACKGROUND),

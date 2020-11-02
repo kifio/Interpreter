@@ -1,4 +1,4 @@
-package presenter;
+package controller;
 
 import java.util.concurrent.ExecutionException;
 
@@ -9,6 +9,8 @@ import javax.swing.text.DefaultStyledDocument;
 
 import interpreter.Interpreter;
 import model.Highlighter;
+
+import static model.Constants.INTERPRETATION;
 
 public class InputDocument extends DefaultStyledDocument {
 
@@ -37,16 +39,11 @@ public class InputDocument extends DefaultStyledDocument {
         if (interpreterWorker != null) {
             interpreterWorker.cancel(true);
         }
-
-        listener.onProgramInterpreted(new Interpreter.Output("Interpretation...", ""));
+        listener.onStartInterpretation();
         interpreterWorker = new SwingWorker<Interpreter.Output, Void>() {
-
-            private long start;
-            private long end;
 
             @Override
             public Interpreter.Output doInBackground() {
-                start = System.currentTimeMillis();
                 return new Interpreter().interpret(program);
             }
 
@@ -61,8 +58,6 @@ public class InputDocument extends DefaultStyledDocument {
                         e.printStackTrace();
                     }
                 }
-                end = System.currentTimeMillis();
-                System.out.println("Interpetation took: " + ((end - start)));
             }
         };
 

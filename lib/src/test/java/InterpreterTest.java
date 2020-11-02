@@ -53,36 +53,35 @@ public class InterpreterTest {
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
 
 
-        code = "var count = 44.0 + 56)\n"+
+        code = "var count = 44.0 + 56)\n" +
                 "out count";
         interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
 
 
-        code = "var count = (44.0 + 56\n"+
+        code = "var count = (44.0 + 56\n" +
                 "out count";
         interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
 
 
-        code = "var count = (44.0 + 56\n"+
+        code = "var count = (44.0 + 56\n" +
                 "out count";
         interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
 
 
-        code = "var count = ( + \n"+
+        code = "var count = ( + \n" +
                 "out count";
         interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
         Assertions.assertFalse(interpreterOutput.errors.isEmpty());
 
 
-
-        code = "var count = ( ) \n"+
+        code = "var count = ( ) \n" +
                 "out count";
         interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertTrue(interpreterOutput.output.isEmpty());
@@ -101,7 +100,7 @@ public class InterpreterTest {
     void testSimpleProgramWithExpression() {
         Interpreter.Output interpreterOutput = new Interpreter().interpret(
                 "var expr = 42+21+11.5\n" +
-                "out expr");
+                        "out expr");
         Assertions.assertEquals("74.5", interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
     }
@@ -211,8 +210,8 @@ public class InterpreterTest {
     void testPrintAndOut() {
         Interpreter.Output interpreterOutput = new Interpreter().interpret(
                 "var o = 10 * (1 + 10) / 2\n" +
-                "print \"o is\"\n" +
-                "out o");
+                        "print \"o is\"\n" +
+                        "out o");
         Assertions.assertEquals("\"o is\"\n55.0", interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
 
@@ -230,7 +229,7 @@ public class InterpreterTest {
 
         interpreterOutput = new Interpreter().interpret(
                 "var foo = 100.0\n" +
-                "out {foo, 200}");
+                        "out {foo, 200}");
 
         Assertions.assertEquals(Arrays.toString(getSequence(100, 200)), interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
@@ -364,23 +363,28 @@ public class InterpreterTest {
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
 
         interpreterOutput = new Interpreter().interpret(
-                "out reduce({1, 5}, 0, i k -> i + k)\n"
+                "out reduce({0, 19999}, 0, i k -> i + k)\n"
+        );
+        Assertions.assertEquals("1.99982912E8", interpreterOutput.output);
+        Assertions.assertTrue(interpreterOutput.errors.isEmpty());
+
+        interpreterOutput = new Interpreter().interpret(
+                "var seq = {1,5}\n" +
+                        "out reduce(seq, 0, i k -> i + k)\n"
         );
         Assertions.assertEquals("15.0", interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
 
         interpreterOutput = new Interpreter().interpret(
-                "var seq = {1,5}\n" +
-                "out reduce(seq, 0, i k -> i + k)\n"
+                "var n = 5\n" +
+                        "var sequence = map({1, n}, i -> (-1)^i / (2 * i + 1))\n" +
+                        "var pi = 4 * reduce(sequence, 0, x y -> x + y)\n" +
+                        "print “pi = “\n" +
+                        "out pi"
         );
-        Assertions.assertEquals("15.0", interpreterOutput.output);
+
+        Assertions.assertFalse(interpreterOutput.output.isEmpty());
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
-        interpreterOutput = new Interpreter().interpret(
-                "var seq = {1,5}\n" +
-                        "out reduce(seq, 0, i k -> i k)\n"
-        );
-        Assertions.assertTrue(interpreterOutput.output.isEmpty());
-        Assertions.assertFalse(interpreterOutput.errors.isEmpty());
     }
 
     private float[] getSequence(int from, int to) {

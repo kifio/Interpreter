@@ -77,9 +77,10 @@ public class MapExecutor extends Executor<float[]> {
 
     private void computeAsync() {
         executorService = Executors.newFixedThreadPool(THREADS_COUNT);
-        List<Runnable> operations = new ArrayList<>(THREADS_COUNT);
+        int operationsCount = (sequence.length / BATCH_MINIMAL_THRESHOLD) + 1;
+        List<Runnable> operations = new ArrayList<>();
 
-        for (int operationIndex = 0; operationIndex < THREADS_COUNT; operationIndex++) {
+        for (int operationIndex = 0; operationIndex < operationsCount; operationIndex++) {
             final int index = operationIndex;
             operations.add(() -> processBatch(index));
         }
