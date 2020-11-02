@@ -3,6 +3,9 @@ package tools;
 import calculator.Calculator;
 import formatter.Formatter;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Validator {
 
     public static boolean isNumber(String strNum) {
@@ -59,7 +62,7 @@ public class Validator {
             String[] existedVariables
     ) {
         String[] expressionTokens = Formatter.getStringWithSpaces(expression).split(" +");
-        System.out.println(expression);
+
         for (String token : expressionTokens) {
             if (token.isEmpty()) {
                 continue;
@@ -73,7 +76,13 @@ public class Validator {
 
         }
 
-        return calculator.calc(expression, existedVariables[0], "1") != null;
+        Map<String, String> validationMap = new HashMap<>();
+
+        for (String var : existedVariables) {
+            validationMap.put(var, "1");
+        }
+
+        return calculator.calc(expression, validationMap) != null;
     }
 
     private static boolean variableExists(String[] variables, String variable) {

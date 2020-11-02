@@ -6,6 +6,7 @@ import formatter.Formatter;
 import formatter.SequenceParserResult;
 import function.FunctionReader;
 import function.executor.MapExecutor;
+import function.executor.ReduceExecutor;
 import provider.NumbersProvider;
 import tools.Constants;
 import tools.Validator;
@@ -104,6 +105,12 @@ public class Interpreter {
                 return sequence != null ? Arrays.copyOf(sequence, sequence.length) : null;
             }, numbersProvider));
 
+    private final FunctionReader<Float> reduceReader = new FunctionReader<>(
+            new ReduceExecutor(calculator, sequenceName -> {
+                float[] sequence = sequences.get(sequenceName);
+                return sequence != null ? Arrays.copyOf(sequence, sequence.length) : null;
+            }, numbersProvider));
+
     private String currentVariableName = null;
     private State currentState = State.UNDEFINED;
     private State previousState = State.UNDEFINED;
@@ -131,6 +138,7 @@ public class Interpreter {
         currentState = State.UNDEFINED;
         previousState = State.UNDEFINED;
 
+        line = reduceSequences(line);
         String formattedLine = Formatter.getStringWithSpaces(line);
         String[] tokens = formattedLine.trim().split(" +");
 
@@ -147,6 +155,34 @@ public class Interpreter {
 
         completeCurrentLine();
         return true;
+    }
+
+    private String reduceSequences(String line) {
+        int startIndex = line.indexOf(Constants.REDUCE);
+        if (startIndex != -1) {
+
+            // Trim `reduce` keyword and try to calculate all next `reduce()`
+            String foo = line.substring(startIndex + Constants.REDUCE.length());
+            String bar = reduceSequences(foo);
+
+            line = line.replace(foo, bar);
+
+            Float result;
+            char[] chars = bar.toCharArray();
+            for (char c : chars) {
+                reduceReader.readNextChar(c);
+                if (reduceReader.isCompleted() && reduceReader.validate()) {
+                    result = reduceReader.executor.compute();
+                    if (result != null) {
+                        line = line.replace(Constants.REDUCE + reduceReader.getFunctionExpression(),
+                                result.toString());
+                    }
+                }
+            }
+        }
+
+        reduceReader.reset();
+        return line;
     }
 
     private boolean handleToken(String token) {
@@ -393,9 +429,5 @@ public class Interpreter {
         }
 
         return true;
-    }
-
-    public void stop() {
-        shouldStop = true;
     }
 }

@@ -55,6 +55,10 @@ public class FunctionReader<T> {
         return executor.validate(functionStringReader.toString().trim());
     }
 
+    public String getFunctionExpression() {
+        return functionStringReader.toString();
+    }
+
     public void reset() {
         functionStringReader.setLength(0);
         bracketsPairsNumber = -1;

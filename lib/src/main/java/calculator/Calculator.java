@@ -10,11 +10,14 @@ import java.util.regex.Pattern;
 
 public class Calculator {
 
-    public Float calc(String expression, String variable, String value) {
+    public Float calc(String expression, Map<String, String> variables) {
         String[] tokens = Formatter.getStringWithSpaces(expression).split(" +");
-        for (int i = 0; i < tokens.length; i++) {
-            if (tokens[i].equals(variable)) {
-                tokens[i] = value;
+
+        if (!variables.isEmpty()) {
+            for (int i = 0; i < tokens.length; i++) {
+                if (variables.containsKey(tokens[i])) {
+                    tokens[i] = variables.get(tokens[i]);
+                }
             }
         }
 

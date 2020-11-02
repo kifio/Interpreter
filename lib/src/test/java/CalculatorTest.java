@@ -2,6 +2,8 @@ import calculator.Calculator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
+
 public class CalculatorTest {
 
     private static class TestData {
@@ -122,7 +124,7 @@ public class CalculatorTest {
         Calculator calculator = new Calculator();
 
         for (TestData testDatum : TEST_DATA) {
-            Float result = calculator.calc(testDatum.expression, null, null);
+            Float result = calculator.calc(testDatum.expression, Collections.emptyMap());
             System.out.println("actual: " + result + "; expected: " + testDatum.result);
             Assertions.assertEquals(
                     Float.floatToIntBits(result),
@@ -131,7 +133,7 @@ public class CalculatorTest {
         }
 
         for (TestData testDatum : BAD_TEST_DATA) {
-            Assertions.assertNull(calculator.calc(testDatum.expression, null, null));
+            Assertions.assertNull(calculator.calc(testDatum.expression, Collections.emptyMap()));
         }
     }
 }

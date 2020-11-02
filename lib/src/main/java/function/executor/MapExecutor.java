@@ -9,7 +9,9 @@ import tools.Constants;
 import tools.Validator;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
 public class MapExecutor extends Executor<float[]> {
@@ -52,51 +54,6 @@ public class MapExecutor extends Executor<float[]> {
         return parseLambda(tokens[1]);
     }
 
-    private boolean handleVariable(String token) {
-        if (Validator.variableExists(token)) {
-            sequence = sequenceProvider.getSequenceByName(token);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private boolean handleSequence(String sequence) {
-        SequenceParserResult sequenceParserResult = Formatter.formatSequence(
-                calculator,
-                sequence.trim(),
-                numbersProvider);
-
-        boolean isSequenceValid = sequenceParserResult.sequence != null
-                && sequenceParserResult.errors.isEmpty();
-
-        if (isSequenceValid) {
-            this.sequence = sequenceParserResult.sequence;
-        } else {
-            for (String err : sequenceParserResult.errors) {
-                appendError(err);
-            }
-            return false;
-        }
-
-        return true;
-    }
-
-    private boolean handleMap(String token) {
-        if (token.startsWith(Constants.MAP)) {
-            token = token.substring(3);
-            MapExecutor nestedExecutor = new MapExecutor(calculator, sequenceProvider, numbersProvider);
-            if (nestedExecutor.validate(token.trim())) {
-                this.sequence = nestedExecutor.compute();
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            return false;
-        }
-    }
-
     @Override
     public float[] compute() {
         if (sequence.length < BATCH_MINIMAL_THRESHOLD) {
@@ -108,13 +65,10 @@ public class MapExecutor extends Executor<float[]> {
     }
 
     private void computeSync() {
+        Map<String, String> variables = new HashMap<>();
         for (int i = 0; i < sequence.length; i++) {
-            Float item = calculator.calc(
-                    lambdaExpression,
-                    lambdaVariableName,
-                    String.valueOf(sequence[i])
-            );
-
+            variables.put(lambdaVariableName, String.valueOf(sequence[i]));
+            Float item = calculator.calc(lambdaExpression, variables);
             if (item != null) {
                 sequence[i] = item;
             }
@@ -146,6 +100,7 @@ public class MapExecutor extends Executor<float[]> {
     }
 
     private void processBatch(final int operationIndex) {
+        Map<String, String> variables = new HashMap<>();
 
         for (int i = 0; i < BATCH_MINIMAL_THRESHOLD; i++) {
             final int itemIndex = i + (BATCH_MINIMAL_THRESHOLD * operationIndex);
@@ -154,10 +109,8 @@ public class MapExecutor extends Executor<float[]> {
                 return;
             }
 
-            Float item = calculator.calc(
-                    lambdaExpression, lambdaVariableName,
-                    String.valueOf(sequence[itemIndex])
-            );
+            variables.put(lambdaVariableName, String.valueOf(sequence[i]));
+            Float item = calculator.calc(lambdaExpression, variables);
 
             if (item != null) {
                 sequence[i] = item;
@@ -197,14 +150,6 @@ public class MapExecutor extends Executor<float[]> {
         }
 
         return true;
-    }
-
-    private void appendError(String error) {
-        if (errors == null) {
-            errors = new ArrayList<>();
-        }
-
-        errors.add(error);
     }
 
     @Override

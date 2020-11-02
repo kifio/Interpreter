@@ -353,6 +353,36 @@ public class InterpreterTest {
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
     }
 
+    @Test
+    void reduceTests() {
+        Interpreter.Output interpreterOutput = new Interpreter().interpret(
+                "var n = reduce({1, 5}, 0, i k -> i + k)\n" + // 15
+                        "var m = reduce({1, 5}, 2, i k -> k + k) + reduce({1, 2}, n, k i -> i + i)\n" + // 10 + 10 + 4 + 4 = 28
+                        "out n + m\n"
+        );
+        Assertions.assertEquals("43.0", interpreterOutput.output);
+        Assertions.assertTrue(interpreterOutput.errors.isEmpty());
+
+        interpreterOutput = new Interpreter().interpret(
+                "out reduce({1, 5}, 0, i k -> i + k)\n"
+        );
+        Assertions.assertEquals("15.0", interpreterOutput.output);
+        Assertions.assertTrue(interpreterOutput.errors.isEmpty());
+
+        interpreterOutput = new Interpreter().interpret(
+                "var seq = {1,5}\n" +
+                "out reduce(seq, 0, i k -> i + k)\n"
+        );
+        Assertions.assertEquals("15.0", interpreterOutput.output);
+        Assertions.assertTrue(interpreterOutput.errors.isEmpty());
+        interpreterOutput = new Interpreter().interpret(
+                "var seq = {1,5}\n" +
+                        "out reduce(seq, 0, i k -> i k)\n"
+        );
+        Assertions.assertTrue(interpreterOutput.output.isEmpty());
+        Assertions.assertFalse(interpreterOutput.errors.isEmpty());
+    }
+
     private float[] getSequence(int from, int to) {
         float[] out = new float[to - from + 1];
 
