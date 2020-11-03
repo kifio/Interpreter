@@ -1,10 +1,8 @@
 package function.executor;
 
 import calculator.Calculator;
-import formatter.Formatter;
-import formatter.SequenceParserResult;
 import provider.NumbersProvider;
-import provider.SequenceProvider;
+import provider.SequencesProvider;
 import tools.Constants;
 import tools.Validator;
 
@@ -20,9 +18,9 @@ public class MapExecutor extends Executor<float[]> {
     private String lambdaExpression;
 
     public MapExecutor(Calculator calculator,
-                       SequenceProvider sequenceProvider,
+                       SequencesProvider sequencesProvider,
                        NumbersProvider numbersProvider) {
-        super(calculator, sequenceProvider, numbersProvider);
+        super(calculator, sequencesProvider, numbersProvider);
     }
 
     @Override
@@ -56,7 +54,7 @@ public class MapExecutor extends Executor<float[]> {
 
     @Override
     public float[] compute() {
-        if (sequence.length < BATCH_MINIMAL_THRESHOLD) {
+        if (sequence.length < THRESHOLD) {
             computeSync();
         } else {
             computeAsync();
@@ -77,7 +75,7 @@ public class MapExecutor extends Executor<float[]> {
 
     private void computeAsync() {
         executorService = Executors.newFixedThreadPool(THREADS_COUNT);
-        int operationsCount = (sequence.length / BATCH_MINIMAL_THRESHOLD) + 1;
+        int operationsCount = (sequence.length / THRESHOLD) + 1;
         List<Runnable> operations = new ArrayList<>();
 
         for (int operationIndex = 0; operationIndex < operationsCount; operationIndex++) {
@@ -100,11 +98,13 @@ public class MapExecutor extends Executor<float[]> {
         }
     }
 
+    // Process batch of operations.
+    // Modify input sequence.
     private void processBatch(final int operationIndex) {
         Map<String, String> variables = new HashMap<>();
 
-        for (int i = 0; i < BATCH_MINIMAL_THRESHOLD; i++) {
-            final int itemIndex = i + (BATCH_MINIMAL_THRESHOLD * operationIndex);
+        for (int i = 0; i < THRESHOLD; i++) {
+            final int itemIndex = i + (THRESHOLD * operationIndex);
 
             if (itemIndex >= sequence.length) {
                 return;
@@ -134,7 +134,7 @@ public class MapExecutor extends Executor<float[]> {
             return false;
         }
 
-        if (Validator.variableExists(lambdaTokens[0])) {
+        if (Validator.isNameAvailable(lambdaTokens[0])) {
             this.lambdaVariableName = lambdaTokens[0];
         } else {
             appendError("Invalid variable name");

@@ -4,32 +4,33 @@ import calculator.Calculator;
 import formatter.Formatter;
 import formatter.SequenceParserResult;
 import provider.NumbersProvider;
-import provider.SequenceProvider;
+import provider.SequencesProvider;
 import tools.Constants;
 import tools.Validator;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public abstract class Executor<T> {
 
-    static final int BATCH_MINIMAL_THRESHOLD = 10000;
+    // If sequence contains less items then threshold, it would be compute in the caller thread.
+    // Else it would be done parallel.
+    static final int THRESHOLD = 10000;
     static final int THREADS_COUNT = 16;
 
     float[] sequence;
     public List<String> errors;
 
     final Calculator calculator;
-    final SequenceProvider sequenceProvider;
+    final SequencesProvider sequencesProvider;
     final NumbersProvider numbersProvider;
 
     ExecutorService executorService;
 
-    public Executor(Calculator calculator, SequenceProvider sequenceProvider, NumbersProvider numbersProvider) {
+    public Executor(Calculator calculator, SequencesProvider sequencesProvider, NumbersProvider numbersProvider) {
         this.calculator = calculator;
-        this.sequenceProvider = sequenceProvider;
+        this.sequencesProvider = sequencesProvider;
         this.numbersProvider = numbersProvider;
     }
 
@@ -51,15 +52,17 @@ public abstract class Executor<T> {
         }
     }
 
+    // check if input sequence is kept in variable
     boolean handleVariable(String token) {
-        if (Validator.variableExists(token)) {
-            sequence = sequenceProvider.getSequenceByName(token);
+        if (Validator.isNameAvailable(token)) {
+            sequence = sequencesProvider.getSequenceByName(token);
             return true;
         } else {
             return false;
         }
     }
 
+    // check if input sequence is sequence
     boolean handleSequence(String sequence) {
         SequenceParserResult sequenceParserResult = Formatter.formatSequence(
                 calculator,
@@ -81,10 +84,11 @@ public abstract class Executor<T> {
         return true;
     }
 
+    // check if input sequence is result of `map()`
     boolean handleMap(String token) {
         if (token.startsWith(Constants.MAP)) {
             token = token.substring(3);
-            MapExecutor nestedExecutor = new MapExecutor(calculator, sequenceProvider, numbersProvider);
+            MapExecutor nestedExecutor = new MapExecutor(calculator, sequencesProvider, numbersProvider);
             if (nestedExecutor.validate(token.trim())) {
                 this.sequence = nestedExecutor.compute();
                 return true;

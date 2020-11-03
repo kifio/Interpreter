@@ -1,10 +1,8 @@
 package function.executor;
 
 import calculator.Calculator;
-import formatter.Formatter;
-import formatter.SequenceParserResult;
 import provider.NumbersProvider;
-import provider.SequenceProvider;
+import provider.SequencesProvider;
 import tools.Constants;
 import tools.Validator;
 
@@ -21,9 +19,9 @@ public class ReduceExecutor extends Executor<Float> {
     private Float baseElement;
 
     public ReduceExecutor(Calculator calculator,
-                          SequenceProvider sequenceProvider,
+                          SequencesProvider sequencesProvider,
                           NumbersProvider numbersProvider) {
-        super(calculator, sequenceProvider, numbersProvider);
+        super(calculator, sequencesProvider, numbersProvider);
     }
 
     @Override
@@ -70,7 +68,6 @@ public class ReduceExecutor extends Executor<Float> {
         return this.baseElement != null;
     }
 
-
     @Override
     public Float compute() {
 //        if (sequence.length < BATCH_MINIMAL_THRESHOLD) {
@@ -82,7 +79,7 @@ public class ReduceExecutor extends Executor<Float> {
 
     private Float computeAsync() {
         executorService = Executors.newFixedThreadPool(THREADS_COUNT);
-        int operationsCount = (sequence.length / BATCH_MINIMAL_THRESHOLD) + 1;
+        int operationsCount = (sequence.length / THRESHOLD) + 1;
 
         List<Callable<Float>> operations = new ArrayList<>(operationsCount);
         List<Float> results = new ArrayList<>();
@@ -118,7 +115,6 @@ public class ReduceExecutor extends Executor<Float> {
         return computeSync();
     }
 
-
     private Float computeSync() {
         Map<String, String> variables = new HashMap<>();
 
@@ -139,13 +135,13 @@ public class ReduceExecutor extends Executor<Float> {
     private Float processBatch(final int operationIndex) {
 
         Map<String, String> variables = new HashMap<>();
-        int counter = BATCH_MINIMAL_THRESHOLD * operationIndex;
+        int counter = THRESHOLD * operationIndex;
 
         if (counter >= sequence.length) {
             return null;
         }
 
-        int limit = BATCH_MINIMAL_THRESHOLD * (operationIndex + 1);
+        int limit = THRESHOLD * (operationIndex + 1);
 
         System.out.println("processBatch from " + counter + " until " + limit );
 
@@ -187,7 +183,7 @@ public class ReduceExecutor extends Executor<Float> {
         }
 
         for (int i = 0; i < lambdaVariableNames.length; i++) {
-            if (Validator.variableExists(lambdaVariableNames[i])) {
+            if (Validator.isNameAvailable(lambdaVariableNames[i])) {
                 this.lambdaVariableNames[i] = lambdaVariableNames[i];
             } else {
                 appendError("Invalid variable name");

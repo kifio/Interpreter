@@ -8,6 +8,7 @@ import function.FunctionReader;
 import function.executor.MapExecutor;
 import function.executor.ReduceExecutor;
 import provider.NumbersProvider;
+import provider.SequencesProvider;
 import tools.Constants;
 import tools.Validator;
 
@@ -15,6 +16,7 @@ import java.util.*;
 
 public class Interpreter {
 
+    // Holder for output and errors.
     public static class Output {
 
         public final String output;
@@ -78,12 +80,8 @@ public class Interpreter {
 
         // Read string constant.
         // Available from DETERMINE_VARIABLE_TYPE, READ_OUT states.
-        READ_MAP,
-
-        READ_REDUCE
+        READ_MAP
     }
-
-    private boolean shouldStop = false;
 
     private final HashMap<String, String> numbers = new HashMap<>();
     private final HashMap<String, float[]> sequences = new HashMap<>();
@@ -97,35 +95,31 @@ public class Interpreter {
     private final StringBuilder currentOut = new StringBuilder();
 
     private final NumbersProvider numbersProvider = numbers::get;
+    private final SequencesProvider sequencesProvider = sequenceName -> {
+        float[] sequence = sequences.get(sequenceName);
+        return sequence != null ? Arrays.copyOf(sequence, sequence.length) : null;
+    };
 
     private final Calculator calculator = new Calculator();
+
     private final FunctionReader<float[]> mapReader = new FunctionReader<>(
-            new MapExecutor(calculator, sequenceName -> {
-                float[] sequence = sequences.get(sequenceName);
-                return sequence != null ? Arrays.copyOf(sequence, sequence.length) : null;
-            }, numbersProvider));
+            new MapExecutor(calculator, sequencesProvider, numbersProvider));
 
     private final FunctionReader<Float> reduceReader = new FunctionReader<>(
-            new ReduceExecutor(calculator, sequenceName -> {
-                float[] sequence = sequences.get(sequenceName);
-                return sequence != null ? Arrays.copyOf(sequence, sequence.length) : null;
-            }, numbersProvider));
+            new ReduceExecutor(calculator, sequencesProvider, numbersProvider));
 
     private String currentVariableName = null;
     private State currentState = State.UNDEFINED;
     private State previousState = State.UNDEFINED;
 
+    // Method took program and returns result of program interpretation.
     public Interpreter.Output interpret(String code) {
         Scanner scanner = new Scanner(code);
-        shouldStop = false;
 
         while (scanner.hasNextLine()) {
-            if (shouldStop) {
-                return null;
-            }
-
             String line = scanner.nextLine();
             if (!processLine(line)) {
+                scanner.close();
                 return new Interpreter.Output(output, errors);
             }
         }
@@ -138,10 +132,15 @@ public class Interpreter {
         currentState = State.UNDEFINED;
         previousState = State.UNDEFINED;
 
+        // first step is calc all valid `reduce()` functions in line and replace them with results
         line = reduceSequences(line);
+
+        // second step is split line by spaces, for getting tokens array.
         String formattedLine = Formatter.getStringWithSpaces(line);
         String[] tokens = formattedLine.trim().split(" +");
 
+        // third step is reading tokens array and keeping all variables.
+        // by order of tokens in array i could determine correctness of program and make some actions according known patterns.
         for (String token : tokens) {
 
             if (token.isEmpty()) {
@@ -153,22 +152,29 @@ public class Interpreter {
             }
         }
 
+        // fourth step is trying to compute expression, if the end of expression is the end of the line.
         completeCurrentLine();
         return true;
     }
 
     private String reduceSequences(String line) {
         int startIndex = line.indexOf(Constants.REDUCE);
+
+        // if line doesn't contains reduce - just return it as is.
         if (startIndex != -1) {
 
-            // Trim `reduce` keyword and try to calculate all next `reduce()`
-            String foo = line.substring(startIndex + Constants.REDUCE.length());
-            String bar = reduceSequences(foo);
+            // Trim `reduce` keyword and recursively looking for `reduce()` expression in result substring.
+            String trimmedString = line.substring(startIndex + Constants.REDUCE.length());
+            String reducedString = reduceSequences(trimmedString);
 
-            line = line.replace(foo, bar);
+            // after replacement i will have only one reduce in line.
+            line = line.replace(trimmedString, reducedString);
 
             Float result;
-            char[] chars = bar.toCharArray();
+            char[] chars = reducedString.toCharArray();
+
+            // read, validate, compute `reduce()` body.
+            // replace it with result of computation.
             for (char c : chars) {
                 reduceReader.readNextChar(c);
                 if (reduceReader.isCompleted() && reduceReader.validate()) {
@@ -185,6 +191,7 @@ public class Interpreter {
         return line;
     }
 
+    // Tokens handling done with state machine.
     private boolean handleToken(String token) {
         switch (currentState) {
             case UNDEFINED:
@@ -212,6 +219,7 @@ public class Interpreter {
         }
     }
 
+    // read `map()` body token by token.
     private boolean readMap(String token) {
         mapReader.readNextToken(token);
         if (mapReader.isCompleted()) {
@@ -221,14 +229,13 @@ public class Interpreter {
         }
     }
 
+    // validate map, apply expression to all elements and keep result in `sequences`.
     private boolean applyMap() {
         if (mapReader.validate()) {
             if (previousState == State.DETERMINE_VARIABLE_TYPE) {
                 sequences.put(currentVariableName, mapReader.executor.compute());
-            } else if (previousState == State.READ_OUT) {
-                output.add(Arrays.toString(mapReader.executor.compute()));
             }
-            currentState = previousState;
+            currentState = State.UNDEFINED;
             mapReader.reset();
             return true;
         } else {
@@ -238,7 +245,7 @@ public class Interpreter {
     }
 
     private boolean handleVariableName(String token) {
-        if (Validator.variableExists(token)) {
+        if (Validator.isNameAvailable(token)) {
             currentVariableName = token;
             currentState = State.READ_ASSIGN_SYMBOL;
             return true;
@@ -279,9 +286,12 @@ public class Interpreter {
         }
     }
 
+    // read sequence {n, m} token by token, then try to make array from this sequence.
+    // if it's possible (n and m are integers, n < m), save array to `sequences`.
     private boolean readSequence(String token) {
         currentSequence.append(token);
         if (token.equals(Constants.END_SEQUENCE)) {
+
             SequenceParserResult sequenceParserResult = Formatter.formatSequence(
                     calculator,
                     currentSequence.toString().trim(),
@@ -303,8 +313,11 @@ public class Interpreter {
         return true;
     }
 
+    // read arithmetic expression token by token.
+    // all tokens should be signs or numbers.
     private boolean readExpression(String token) {
         String str = token;
+
         if (numbers.containsKey(str)) {
             str = numbers.get(token);
         }
@@ -318,21 +331,11 @@ public class Interpreter {
         }
     }
 
+    // when line end achieved, try to complete some states
     private void completeCurrentLine() {
         if (currentState == State.READ_EXPRESSION
                 && previousState == State.DETERMINE_VARIABLE_TYPE) {
-            String result = calcCurrentExpression();
-            if (result != null) {
-                if (previousState == State.READ_EXPRESSION) {
-                    numbers.put(currentVariableName, result);
-                } else if (previousState == State.READ_OUT) {
-                    output.add(result);
-                }
-            }
-            currentVariableName = null;
-        } else if (currentState == State.READ_MAP
-                && previousState == State.DETERMINE_VARIABLE_TYPE) {
-            applyMap();
+            calcCurrentExpression();
         } else if (currentState == State.PRINT_STRING_CONSTANT
                 && previousState == State.UNDEFINED) {
             output.add(currentStringConstant.toString().trim());
@@ -349,28 +352,53 @@ public class Interpreter {
         currentVariableName = null;
     }
 
+    // calculate expression kept in `currentExpression` field.
+    private void calcCurrentExpression() {
+        if (currentExpression.length() == 0) {
+            currentVariableName = null;
+            return;
+        }
+
+        String expr = currentExpression.toString();
+        currentExpression.setLength(0);
+
+        Float result = calculator.calc(expr, numbersProvider);
+
+        if (result != null) {
+            numbers.put(currentVariableName, String.valueOf(result));
+        }
+
+        currentVariableName = null;
+    }
+
+    // out works like `var n = ` sequence, but instead of saving result to `numbers` or `sequences` it should be added to `output`
     private void readOut(String out) {
+        // First try to read arithmetic expression
         ExpressionParserResult formattedExpression = Formatter.formatExpression(out, numbersProvider);
         if (formattedExpression.expression != null) {
             printExpression(formattedExpression.expression);
             return;
         }
 
+        // If it not arithmetic expression, try to read  sequence
         SequenceParserResult formattedSequence = Formatter.formatSequence(calculator, out.trim(), numbersProvider);
         if (formattedSequence.sequence != null) {
             output.add(Arrays.toString(formattedSequence.sequence));
             return;
         }
 
+        // if it starts with map, try to compute `map()`
         if (out.startsWith(Constants.MAP)) {
             printMap(out.substring(4));
-        } else if (sequences.containsKey(out)) {
+        } else if (sequences.containsKey(out)) { // if it sequence, add connected array to output.
             output.add(Arrays.toString(sequences.get(out)));
         } else {
+            // all the rest handled as error
             errors.add("Invalid expression in out");
         }
     }
 
+    // calculate expression and add to output
     private void printExpression(String expression) {
         Float expressionResult = calculator.calc(expression, numbersProvider);
         if (expressionResult == null) {
@@ -380,6 +408,8 @@ public class Interpreter {
         }
     }
 
+    // read `map()` body char by char, instead of splitting it to tokens.
+    // then try to apply it and add results to output.
     private void printMap(String out) {
         mapReader.reset();
         char[] chars = out.toCharArray();
@@ -394,19 +424,7 @@ public class Interpreter {
         }
     }
 
-    private String calcCurrentExpression() {
-        if (currentExpression.length() == 0) {
-            return null;
-        }
-
-        String expr = currentExpression.toString();
-        currentExpression.setLength(0);
-        previousState = State.READ_EXPRESSION;
-
-        Float result = calculator.calc(expr, numbersProvider);
-        return result != null ? String.valueOf(result) : null;
-    }
-
+    // read token and
     private boolean handleTokenInUndefinedState(String token) {
         if (token.equals(Constants.VARIABLE)) {
             previousState = State.UNDEFINED;

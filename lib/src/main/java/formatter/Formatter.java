@@ -7,6 +7,8 @@ import tools.Validator;
 
 public class Formatter {
 
+    // Return string in which all symbols wrapped around with spaces.
+    // It uses for splitting line by tokens easily.
     public static String getStringWithSpaces(String line) {
         String formattedLine = line;
         for (String symbol : Constants.SYMBOLS) {
@@ -15,6 +17,7 @@ public class Formatter {
         return formattedLine;
     }
 
+    // Validate and transform sequence from string to float[].
     public static SequenceParserResult formatSequence(
             Calculator calculator,
             String currentSequence,
@@ -61,6 +64,7 @@ public class Formatter {
         return sequenceParserResult;
     }
 
+    // Validate expression
     public static ExpressionParserResult formatExpression(
             String expression,
             NumbersProvider numbersProvider

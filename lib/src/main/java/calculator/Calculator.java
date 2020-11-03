@@ -6,10 +6,13 @@ import tools.Constants;
 import tools.Validator;
 
 import java.util.*;
-import java.util.regex.Pattern;
 
+// Calculator based on my Swift implementation of Reverse Polish Notation,
+// but with some fixes and negative numbers supporting.
 public class Calculator {
 
+    // Calc arithmetic expression.
+    // first parameter is expression, second is variables and numbers assigned to these variables.
     public Float calc(String expression, Map<String, String> variables) {
         String[] tokens = Formatter.getStringWithSpaces(expression).split(" +");
 
@@ -26,7 +29,8 @@ public class Calculator {
         return rpnTokens != null ? calc(rpnTokens) : null;
     }
 
-
+    // Calc arithmetic expression.
+    // first parameter is expression, second is provider of numbers for variables from expresion.
     public Float calc(String expression, NumbersProvider numbersProvider) {
         String[] tokens = Formatter.getStringWithSpaces(expression.trim()).split(" +");
 
@@ -58,6 +62,7 @@ public class Calculator {
         return numbers.size() != 1 ? null : numbers.pop();
     }
 
+    // Convert expression to reverse polish notation for excluding ( )
     private List<String> convert(String[] tokens) {
         ArrayList<String> result = new ArrayList<>();
         ArrayList<String> operators = new ArrayList<>();
@@ -136,6 +141,7 @@ public class Calculator {
         return isUnary && isInCorrectPlace && isApplicable;
     }
 
+    // Calculate expression in reverse polish notation
     private boolean calc(Stack<Float> operands, String operator) {
         float b, a;
 

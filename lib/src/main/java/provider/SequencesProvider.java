@@ -1,5 +1,5 @@
 package provider;
 
-public interface SequenceProvider {
+public interface SequencesProvider {
     float[] getSequenceByName(String sequenceName);
 }

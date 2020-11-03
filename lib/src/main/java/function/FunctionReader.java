@@ -3,6 +3,8 @@ package function;
 import function.executor.Executor;
 import tools.Constants;
 
+// Class for reading `map()` and `reduce()` functions.
+// T - is gneric parameter for function result. For `map()` it float[], for reduce it Float.
 public class FunctionReader<T> {
 
     private final StringBuilder functionStringReader = new StringBuilder();

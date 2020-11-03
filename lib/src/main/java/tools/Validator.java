@@ -44,7 +44,8 @@ public class Validator {
                 token.equals(Constants.OPENING_BRACKET);
     }
 
-    public static boolean variableExists(String token) {
+    // name should contains only letters. using keywords for
+    public static boolean isNameAvailable(String token) {
         char[] chars = token.toCharArray();
 
         for (char c : chars) {
@@ -53,7 +54,10 @@ public class Validator {
             }
         }
 
-        return true;
+        return !token.equals(Constants.MAP)
+                && !token.equals(Constants.REDUCE)
+                && !token.equals(Constants.PRINT)
+                && !token.equals(Constants.OUT);
     }
 
     public static boolean isValidLambdaExpression(
@@ -70,7 +74,7 @@ public class Validator {
 
             if (!Validator.isSign(token)
                     && !Validator.isNumber(token)
-                    && !variableExists(existedVariables, token)) {
+                    && !isNameAvailable(existedVariables, token)) {
                 return false;
             }
 
@@ -85,7 +89,7 @@ public class Validator {
         return calculator.calc(expression, validationMap) != null;
     }
 
-    private static boolean variableExists(String[] variables, String variable) {
+    private static boolean isNameAvailable(String[] variables, String variable) {
         for (String var : variables) {
             if (var.equals(variable)) {
                 return true;
