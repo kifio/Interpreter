@@ -13,7 +13,7 @@ public class Validator {
             return false;
         }
         try {
-            Float.parseFloat(strNum);
+            Double.parseDouble(strNum);
         } catch (NumberFormatException nfe) {
             return false;
         }

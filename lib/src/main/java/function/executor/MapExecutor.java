@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
-public class MapExecutor extends Executor<float[]> {
+public class MapExecutor extends Executor<double[]> {
 
     private String lambdaVariableName;
     private String lambdaExpression;
@@ -53,7 +53,7 @@ public class MapExecutor extends Executor<float[]> {
     }
 
     @Override
-    public float[] compute() {
+    public double[] compute() {
         if (sequence.length < THRESHOLD) {
             computeSync();
         } else {
@@ -66,7 +66,7 @@ public class MapExecutor extends Executor<float[]> {
         Map<String, String> variables = new HashMap<>();
         for (int i = 0; i < sequence.length; i++) {
             variables.put(lambdaVariableName, String.valueOf(sequence[i]));
-            Float item = calculator.calc(lambdaExpression, variables);
+            Double item = calculator.calc(lambdaExpression, variables);
             if (item != null) {
                 sequence[i] = item;
             }
@@ -111,7 +111,7 @@ public class MapExecutor extends Executor<float[]> {
             }
 
             variables.put(lambdaVariableName, String.valueOf(sequence[i]));
-            Float item = calculator.calc(lambdaExpression, variables);
+            Double item = calculator.calc(lambdaExpression, variables);
 
             if (item != null) {
                 sequence[i] = item;

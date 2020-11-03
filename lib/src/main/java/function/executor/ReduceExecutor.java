@@ -12,11 +12,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class ReduceExecutor extends Executor<Float> {
+public class ReduceExecutor extends Executor<Double> {
 
     private String[] lambdaVariableNames;
     private String lambdaExpression;
-    private Float baseElement;
+    private Double baseElement;
 
     public ReduceExecutor(Calculator calculator,
                           SequencesProvider sequencesProvider,
@@ -69,20 +69,20 @@ public class ReduceExecutor extends Executor<Float> {
     }
 
     @Override
-    public Float compute() {
-//        if (sequence.length < BATCH_MINIMAL_THRESHOLD) {
+    public Double compute() {
+        if (sequence.length < THRESHOLD) {
             return computeSync();
-//        } else {
-//            return computeAsync();
-//        }
+        } else {
+            return computeAsync();
+        }
     }
 
-    private Float computeAsync() {
+    private Double computeAsync() {
         executorService = Executors.newFixedThreadPool(THREADS_COUNT);
         int operationsCount = (sequence.length / THRESHOLD) + 1;
 
-        List<Callable<Float>> operations = new ArrayList<>(operationsCount);
-        List<Float> results = new ArrayList<>();
+        List<Callable<Double>> operations = new ArrayList<>(operationsCount);
+        List<Double> results = new ArrayList<>();
 
         // Divide sequence to a few batches and reduce them asynchronously.
         for (int operationIndex = 0; operationIndex < operationsCount; operationIndex++) {
@@ -90,15 +90,15 @@ public class ReduceExecutor extends Executor<Float> {
             operations.add(() -> processBatch(index));
         }
 
-        List<Future<Float>> futures = new ArrayList<>(operations.size());
+        List<Future<Double>> futures = new ArrayList<>(operations.size());
 
-        for (Callable<Float> callable : operations) {
+        for (Callable<Double> callable : operations) {
             futures.add(executorService.submit(callable));
         }
 
-        for (Future<Float> future : futures) {
+        for (Future<Double> future : futures) {
             try {
-                Float result = future.get();
+                Double result = future.get();
                 if (result != null) { results.add(result); }
             } catch (InterruptedException | ExecutionException e) {
                 return null;
@@ -106,7 +106,7 @@ public class ReduceExecutor extends Executor<Float> {
         }
 
         // Take all results and reduce them with base element synchronously.
-        this.sequence = new float[results.size()];
+        this.sequence = new double[results.size()];
 
         for (int i = 0; i < sequence.length; i++) {
             this.sequence[i] = results.get(i);
@@ -115,10 +115,10 @@ public class ReduceExecutor extends Executor<Float> {
         return computeSync();
     }
 
-    private Float computeSync() {
+    private Double computeSync() {
         Map<String, String> variables = new HashMap<>();
 
-        float value = sequence[0];
+        double value = sequence[0];
 
         for (int counter = 1; counter < sequence.length; counter++) {
             variables.put(lambdaVariableNames[0], String.valueOf(value));
@@ -132,7 +132,7 @@ public class ReduceExecutor extends Executor<Float> {
         return calculator.calc(lambdaExpression, variables);
     }
 
-    private Float processBatch(final int operationIndex) {
+    private Double processBatch(final int operationIndex) {
 
         Map<String, String> variables = new HashMap<>();
         int counter = THRESHOLD * operationIndex;
@@ -142,10 +142,7 @@ public class ReduceExecutor extends Executor<Float> {
         }
 
         int limit = THRESHOLD * (operationIndex + 1);
-
-        System.out.println("processBatch from " + counter + " until " + limit );
-
-        float value = sequence[counter];
+        double value = sequence[counter];
         counter++;
 
         while (counter < limit) {

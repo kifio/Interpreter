@@ -127,7 +127,7 @@ public class InterpreterTest {
     }
 
     @Test
-    void testSimpleProgramWithFloatElementSequence() {
+    void testSimpleProgramWithDoubleElementSequence() {
         String seq = "{1.2, 21}";
         String code =
                 "var seq = " + seq + "\n" +
@@ -241,7 +241,7 @@ public class InterpreterTest {
                 "var squares = map({1,5}, i -> i^2 * 3)\n" +
                         "out squares";
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
-        Assertions.assertEquals(Arrays.toString(new float[]{
+        Assertions.assertEquals(Arrays.toString(new double[]{
                 1 * 3, 2 * 2 * 3, 3 * 3 * 3, 4 * 4 * 3, 5 * 5 * 3
         }), interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
@@ -259,7 +259,7 @@ public class InterpreterTest {
     void testMapOut() {
         String code = "out map({1,5}, i -> i^2)";
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
-        Assertions.assertEquals(Arrays.toString(new float[]{
+        Assertions.assertEquals(Arrays.toString(new double[]{
                 1, 2 * 2, 3 * 3, 4 * 4, 5 * 5
         }), interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
@@ -272,7 +272,7 @@ public class InterpreterTest {
                         "var squares = map( seq, i -> i^2)\n" +
                         "out squares";
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
-        Assertions.assertEquals(Arrays.toString(new float[]{
+        Assertions.assertEquals(Arrays.toString(new double[]{
                 1, 2 * 2, 3 * 3, 4 * 4, 5 * 5
         }), interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
@@ -286,7 +286,7 @@ public class InterpreterTest {
                 "var o = 10 * (1 + 10) / 2\n" +
                 "out o";
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
-        Assertions.assertEquals(Arrays.toString(new float[]{
+        Assertions.assertEquals(Arrays.toString(new double[]{
                 1, 2 * 2, 3 * 3, 4 * 4, 5 * 5
         }) + "\n55.0", interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
@@ -295,9 +295,9 @@ public class InterpreterTest {
     @Test
     void testMultipleMapApplies() {
         String code = "var seq = {1,3}\n" +
-                "var floats = map(seq, i->  i + i)\n" +
-                "out floats\n" +
-                "var squares = map(floats, i   -> i * i)\n" +
+                "var doubles = map(seq, i->  i + i)\n" +
+                "out doubles\n" +
+                "var squares = map(doubles, i   -> i * i)\n" +
                 "out squares";
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertEquals("[2.0, 4.0, 6.0]\n[4.0, 16.0, 36.0]", interpreterOutput.output);
@@ -307,10 +307,10 @@ public class InterpreterTest {
     @Test
     void testInnerMap() {
         String code = "var seq = {1,3}\n" +
-                "var dfloats = map(map(seq, i -> i + i), i -> i + i)\n" +
+                "var ddoubles = map(map(seq, i -> i + i), i -> i + i)\n" +
                 "out map(map(seq, i -> i + i), i -> i + i)\n";
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
-        Assertions.assertEquals(Arrays.toString(new float[]{
+        Assertions.assertEquals(Arrays.toString(new double[]{
                 4, 8, 12
         }), interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
@@ -321,8 +321,8 @@ public class InterpreterTest {
         String code = "var n = 5\n" +
                 "out map({1, n}, i -> (-1)^i / (2 * i + 1))\n";
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
-        Assertions.assertEquals(Arrays.toString(new float[]{
-                -0.3333333333333333F, 0.2F, -0.14285714285714285F, 0.1111111111111111F, -0.09090909090909091F
+        Assertions.assertEquals(Arrays.toString(new double[]{
+                -0.3333333333333333, 0.2, -0.14285714285714285, 0.1111111111111111, -0.09090909090909091
         }), interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
     }
@@ -334,7 +334,7 @@ public class InterpreterTest {
                 "var seq = {n, m}\n" +
                 "out map(seq, i -> i ^ 2)\n";
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
-        Assertions.assertEquals(Arrays.toString(new float[]{
+        Assertions.assertEquals(Arrays.toString(new double[]{
                 1, 4, 9, 16, 25
         }), interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
@@ -365,7 +365,7 @@ public class InterpreterTest {
         interpreterOutput = new Interpreter().interpret(
                 "out reduce({0, 19999}, 0, i k -> i + k)\n"
         );
-        Assertions.assertEquals("1.99982912E8", interpreterOutput.output);
+        Assertions.assertEquals("1.9999E8", interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
 
         interpreterOutput = new Interpreter().interpret(
@@ -387,8 +387,8 @@ public class InterpreterTest {
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
     }
 
-    private float[] getSequence(int from, int to) {
-        float[] out = new float[to - from + 1];
+    private double[] getSequence(int from, int to) {
+        double[] out = new double[to - from + 1];
 
         for (int i = from; i <= to; i++) {
             out[i - from] = i;

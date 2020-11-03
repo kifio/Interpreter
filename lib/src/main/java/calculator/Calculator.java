@@ -13,7 +13,7 @@ public class Calculator {
 
     // Calc arithmetic expression.
     // first parameter is expression, second is variables and numbers assigned to these variables.
-    public Float calc(String expression, Map<String, String> variables) {
+    public Double calc(String expression, Map<String, String> variables) {
         String[] tokens = Formatter.getStringWithSpaces(expression).split(" +");
 
         if (!variables.isEmpty()) {
@@ -31,7 +31,7 @@ public class Calculator {
 
     // Calc arithmetic expression.
     // first parameter is expression, second is provider of numbers for variables from expresion.
-    public Float calc(String expression, NumbersProvider numbersProvider) {
+    public Double calc(String expression, NumbersProvider numbersProvider) {
         String[] tokens = Formatter.getStringWithSpaces(expression.trim()).split(" +");
 
         for (int i = 0; i < tokens.length; i++) {
@@ -46,12 +46,12 @@ public class Calculator {
         return rpnTokens != null ? calc(rpnTokens) : null;
     }
 
-    private Float calc(List<String> tokens) {
-        Stack<Float> numbers = new Stack<>();
+    private Double calc(List<String> tokens) {
+        Stack<Double> numbers = new Stack<>();
 
         for (String token : tokens) {
             if (Validator.isNumber(token)) {
-                numbers.add(Float.parseFloat(token));
+                numbers.add(Double.parseDouble(token));
             } else {
                 if (!calc(numbers, token)) {
                     return null;
@@ -77,7 +77,7 @@ public class Calculator {
                         result.add(tokens[i]);
                         break;
                     case Constants.MINUS:
-                        float f = Float.parseFloat(tokens[i]);
+                        double f = Double.parseDouble(tokens[i]);
                         String number = String.valueOf(-f);
                         result.add(number);
                         break;
@@ -142,8 +142,8 @@ public class Calculator {
     }
 
     // Calculate expression in reverse polish notation
-    private boolean calc(Stack<Float> operands, String operator) {
-        float b, a;
+    private boolean calc(Stack<Double> operands, String operator) {
+        double b, a;
 
         if (operands.size() >= 2) {
             b = operands.pop();
@@ -162,7 +162,7 @@ public class Calculator {
                     operands.push(a / b);
                     return true;
                 case Constants.POW:
-                    operands.push((float) Math.pow(a, b));
+                    operands.push((double) Math.pow(a, b));
                     return true;
                 default:
                     System.out.println("Unknown operator " + operator);

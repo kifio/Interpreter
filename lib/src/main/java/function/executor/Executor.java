@@ -19,7 +19,7 @@ public abstract class Executor<T> {
     static final int THRESHOLD = 10000;
     static final int THREADS_COUNT = 16;
 
-    float[] sequence;
+    double[] sequence;
     public List<String> errors;
 
     final Calculator calculator;

@@ -17,7 +17,7 @@ public class Formatter {
         return formattedLine;
     }
 
-    // Validate and transform sequence from string to float[].
+    // Validate and transform sequence from string to double[].
     public static SequenceParserResult formatSequence(
             Calculator calculator,
             String currentSequence,
@@ -41,7 +41,7 @@ public class Formatter {
         int[] sequence = new int[stringItems.length];
 
         for (int i = 0; i < stringItems.length; i++) {
-            Float calculatedExpression = calculator.calc(stringItems[i], numbersProvider);
+            Double calculatedExpression = calculator.calc(stringItems[i], numbersProvider);
             if (calculatedExpression != null && calculatedExpression % 1 == 0) {
                 sequence[i] = calculatedExpression.intValue();
             } else {
@@ -55,7 +55,7 @@ public class Formatter {
             return sequenceParserResult;
         }
 
-        sequenceParserResult.sequence = new float[sequence[1] - sequence[0] + 1];
+        sequenceParserResult.sequence = new double[sequence[1] - sequence[0] + 1];
 
         for (int i = sequence[0]; i <= sequence[1]; i++) {
             sequenceParserResult.sequence[i - sequence[0]] = i;

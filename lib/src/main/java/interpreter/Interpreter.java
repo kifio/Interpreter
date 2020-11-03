@@ -84,7 +84,7 @@ public class Interpreter {
     }
 
     private final HashMap<String, String> numbers = new HashMap<>();
-    private final HashMap<String, float[]> sequences = new HashMap<>();
+    private final HashMap<String, double[]> sequences = new HashMap<>();
 
     private final List<String> output = new ArrayList<>();
     private final List<String> errors = new ArrayList<>();
@@ -96,16 +96,16 @@ public class Interpreter {
 
     private final NumbersProvider numbersProvider = numbers::get;
     private final SequencesProvider sequencesProvider = sequenceName -> {
-        float[] sequence = sequences.get(sequenceName);
+        double[] sequence = sequences.get(sequenceName);
         return sequence != null ? Arrays.copyOf(sequence, sequence.length) : null;
     };
 
     private final Calculator calculator = new Calculator();
 
-    private final FunctionReader<float[]> mapReader = new FunctionReader<>(
+    private final FunctionReader<double[]> mapReader = new FunctionReader<>(
             new MapExecutor(calculator, sequencesProvider, numbersProvider));
 
-    private final FunctionReader<Float> reduceReader = new FunctionReader<>(
+    private final FunctionReader<Double> reduceReader = new FunctionReader<>(
             new ReduceExecutor(calculator, sequencesProvider, numbersProvider));
 
     private String currentVariableName = null;
@@ -170,7 +170,7 @@ public class Interpreter {
             // after replacement i will have only one reduce in line.
             line = line.replace(trimmedString, reducedString);
 
-            Float result;
+            Double result;
             char[] chars = reducedString.toCharArray();
 
             // read, validate, compute `reduce()` body.
@@ -362,7 +362,7 @@ public class Interpreter {
         String expr = currentExpression.toString();
         currentExpression.setLength(0);
 
-        Float result = calculator.calc(expr, numbersProvider);
+        Double result = calculator.calc(expr, numbersProvider);
 
         if (result != null) {
             numbers.put(currentVariableName, String.valueOf(result));
@@ -400,7 +400,7 @@ public class Interpreter {
 
     // calculate expression and add to output
     private void printExpression(String expression) {
-        Float expressionResult = calculator.calc(expression, numbersProvider);
+        Double expressionResult = calculator.calc(expression, numbersProvider);
         if (expressionResult == null) {
             errors.add("Cannot calc expression in out");
         } else {
