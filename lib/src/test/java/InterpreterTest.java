@@ -346,9 +346,13 @@ public class InterpreterTest {
                 "var m = 100000\n" +
                 "var seq = {n, m}\n" +
                 "var squares = map(seq, i -> i ^ 2)\n" +
-                "print DONE\n";
+                "out squares\n";
+        double[] seq = getSequence(0, 100000);
+        for (int i = 0; i < seq.length; i++) {
+            seq[i] = seq[i] * seq[i];
+        }
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
-        Assertions.assertEquals("DONE", interpreterOutput.output);
+        Assertions.assertEquals(Arrays.toString(seq), interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
     }
 
