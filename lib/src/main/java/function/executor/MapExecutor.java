@@ -110,13 +110,13 @@ public class MapExecutor extends Executor<double[]> {
                 return;
             }
 
-            variables.put(lambdaVariableName, String.valueOf(sequence[i]));
+            variables.put(lambdaVariableName, String.valueOf(sequence[itemIndex]));
             Double item = calculator.calc(lambdaExpression, variables);
 
             if (item != null) {
-                sequence[i] = item;
+                sequence[itemIndex] = item;
             } else {
-                System.out.println("Cannot calc " + lambdaExpression + " for item " + sequence[i]);
+                System.out.println("Cannot calc " + lambdaExpression + " for item " + sequence[itemIndex]);
                 System.out.println("item at " + itemIndex + " is null");
             }
         }

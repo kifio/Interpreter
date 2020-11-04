@@ -6,7 +6,7 @@ public interface Constants {
             "var m = 100000\n" +
             "var seq = {n, m}\n" +
             "var squares = map(seq, i -> i ^ 2)\n" +
-            "print DONE\n";
+            "out squares\n";
 
     public static final String INTERPRETATION = "Interpretation...";
     public static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
