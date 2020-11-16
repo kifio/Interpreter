@@ -448,4 +448,12 @@ public class Interpreter {
 
         return true;
     }
+
+    public void stop() {
+        reduceReader.executor.stop();
+        reduceReader.reset();
+
+        mapReader.executor.stop();
+        mapReader.reset();
+    }
 }

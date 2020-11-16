@@ -14,9 +14,6 @@ import java.util.concurrent.*;
 
 public class MapExecutor extends Executor<double[]> {
 
-    private String lambdaVariableName;
-    private String lambdaExpression;
-
     public MapExecutor(Calculator calculator,
                        SequencesProvider sequencesProvider,
                        NumbersProvider numbersProvider) {
@@ -25,31 +22,29 @@ public class MapExecutor extends Executor<double[]> {
 
     @Override
     public boolean validate(String functionString) {
-        String[] tokens = new String[2];
 
         int separatorIndex = functionString.lastIndexOf(Constants.COMMA);
 
-        if (separatorIndex == -1) {
-            appendError("Map required two arguments: sequence and lambda");
+        String lambdaExpression = lambdaHelper.extractLambdaFromFunctionString(functionString, separatorIndex);
+
+        if (lambdaExpression == null) {
+            appendError("Reduce required 3 arguments: sequence, base value lambda");
             return false;
         }
 
-        tokens[0] = functionString.substring(1, separatorIndex).trim();
-
-        tokens[1] = functionString.substring(separatorIndex + 1, functionString.length() - 1)
-                .replace("- >", "->")
-                .trim();
-
-        if (!handleVariable(tokens[0])) {
-            if (!handleMap(tokens[0])) {
-                if (!handleSequence(tokens[0])) {
-                    reset();
-                    return false;
-                }
-            }
+        if (!parseLambda(lambdaHelper.splitLambda(lambdaExpression))) {
+            appendError("Lambda should have only variable name and expressions");
+            return false;
         }
 
-        return parseLambda(tokens[1]);
+        String sequence = functionString.substring(1, separatorIndex).trim();
+
+        if (handleVariable(sequence) || handleMap(sequence) || handleSequence(sequence)) {
+            return true;
+        }
+
+        reset();
+        return false;
     }
 
     @Override
@@ -65,7 +60,7 @@ public class MapExecutor extends Executor<double[]> {
     private void computeSync() {
         Map<String, String> variables = new HashMap<>();
         for (int i = 0; i < sequence.length; i++) {
-            variables.put(lambdaVariableName, String.valueOf(sequence[i]));
+            variables.put(lambdaVariableNames[0], String.valueOf(sequence[i]));
             Double item = calculator.calc(lambdaExpression, variables);
             if (item != null) {
                 sequence[i] = item;
@@ -74,7 +69,6 @@ public class MapExecutor extends Executor<double[]> {
     }
 
     private void computeAsync() {
-        executorService = Executors.newFixedThreadPool(THREADS_COUNT);
         int operationsCount = (sequence.length / THRESHOLD) + 1;
         List<Runnable> operations = new ArrayList<>();
 
@@ -104,13 +98,17 @@ public class MapExecutor extends Executor<double[]> {
         Map<String, String> variables = new HashMap<>();
 
         for (int i = 0; i < THRESHOLD; i++) {
+            if (forceStop) {
+                return;
+            }
+
             final int itemIndex = i + (THRESHOLD * operationIndex);
 
             if (itemIndex >= sequence.length) {
                 return;
             }
 
-            variables.put(lambdaVariableName, String.valueOf(sequence[itemIndex]));
+            variables.put(lambdaVariableNames[0], String.valueOf(sequence[itemIndex]));
             Double item = calculator.calc(lambdaExpression, variables);
 
             if (item != null) {
@@ -122,41 +120,16 @@ public class MapExecutor extends Executor<double[]> {
         }
     }
 
-    private boolean parseLambda(String lambda) {
-        String[] lambdaTokens = lambda.split("->");
-
-        for (int i = 0; i < lambdaTokens.length; i++) {
-            lambdaTokens[i] = lambdaTokens[i].trim();
-        }
-
-        if (lambdaTokens.length != 2) {
-            appendError("Lambda should have only variable name and expressions");
-            return false;
-        }
+    private boolean parseLambda(String[] lambdaTokens) {
 
         if (Validator.isNameAvailable(lambdaTokens[0])) {
-            this.lambdaVariableName = lambdaTokens[0];
+            this.lambdaVariableNames = new String[1];
+            this.lambdaVariableNames[0] = lambdaTokens[0];
         } else {
             appendError("Invalid variable name");
             return false;
         }
 
-        if (Validator.isValidLambdaExpression(calculator,
-                lambdaTokens[1],
-                new String[]{lambdaTokens[0]})) {
-            this.lambdaExpression = lambdaTokens[1];
-        } else {
-            appendError("Cannot read lambda expression");
-            return false;
-        }
-
-        return true;
-    }
-
-    @Override
-    public void reset() {
-        super.reset();
-        lambdaVariableName = null;
-        lambdaExpression = null;
+        return setLambdaExpression(lambdaTokens[1]);
     }
 }

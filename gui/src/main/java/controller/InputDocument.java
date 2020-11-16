@@ -17,6 +17,7 @@ public class InputDocument extends DefaultStyledDocument {
     private final Highlighter highlighter;
     private final OnProgramInterpretedListener listener;
     private SwingWorker<Interpreter.Output, Void> interpreterWorker;
+    private Interpreter interpreter;
 
     public InputDocument(Highlighter highlighter, OnProgramInterpretedListener listener) {
         this.highlighter = highlighter;
@@ -39,12 +40,21 @@ public class InputDocument extends DefaultStyledDocument {
         if (interpreterWorker != null) {
             interpreterWorker.cancel(true);
         }
+
         listener.onStartInterpretation();
         interpreterWorker = new SwingWorker<Interpreter.Output, Void>() {
 
             @Override
             public Interpreter.Output doInBackground() {
-                return new Interpreter().interpret(program);
+                if (interpreter != null) {
+                    interpreter.stop();
+                }
+
+                interpreter = new Interpreter();
+                Interpreter.Output output = interpreter.interpret(program);
+
+                interpreter = null;
+                return output;
             }
 
             @Override

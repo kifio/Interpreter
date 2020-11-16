@@ -11,6 +11,7 @@ import tools.Validator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public abstract class Executor<T> {
 
@@ -25,13 +26,20 @@ public abstract class Executor<T> {
     final Calculator calculator;
     final SequencesProvider sequencesProvider;
     final NumbersProvider numbersProvider;
+    final LambdaHelper lambdaHelper;
 
-    ExecutorService executorService;
+    String[] lambdaVariableNames;
+    String lambdaExpression;
+
+    boolean forceStop = false;
+
+    static ExecutorService executorService = Executors.newFixedThreadPool(THREADS_COUNT);
 
     public Executor(Calculator calculator, SequencesProvider sequencesProvider, NumbersProvider numbersProvider) {
         this.calculator = calculator;
         this.sequencesProvider = sequencesProvider;
         this.numbersProvider = numbersProvider;
+        this.lambdaHelper = new LambdaHelper();
     }
 
     // Check is functions valid.
@@ -47,8 +55,24 @@ public abstract class Executor<T> {
 
     public void reset() {
         sequence = null;
-        if (executorService != null) {
-            executorService.shutdownNow();
+        lambdaExpression = null;
+        lambdaVariableNames = null;
+    }
+
+    public void stop() {
+        this.forceStop = true;
+    }
+
+    boolean setLambdaExpression(String lambdaExpression) {
+        if (Validator.isValidLambdaExpression(calculator,
+                lambdaExpression,
+                lambdaVariableNames)
+        ) {
+            this.lambdaExpression = lambdaExpression;
+            return true;
+        } else {
+            appendError("Cannot read lambda expression");
+            return false;
         }
     }
 
@@ -107,5 +131,4 @@ public abstract class Executor<T> {
 
         errors.add(error);
     }
-
 }

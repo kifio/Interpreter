@@ -14,8 +14,6 @@ import java.util.concurrent.Future;
 
 public class ReduceExecutor extends Executor<Double> {
 
-    private String[] lambdaVariableNames;
-    private String lambdaExpression;
     private Double baseElement;
 
     public ReduceExecutor(Calculator calculator,
@@ -29,16 +27,15 @@ public class ReduceExecutor extends Executor<Double> {
 
         int separatorIndex = functionString.lastIndexOf(Constants.COMMA);
 
-        if (separatorIndex == -1) {
-            appendError("Map required 3 arguments: sequence, base value lambda");
+        String lambdaExpression = lambdaHelper.extractLambdaFromFunctionString(functionString, separatorIndex);
+
+        if (lambdaExpression == null) {
+            appendError("Reduce required 3 arguments: sequence, base value lambda");
             return false;
         }
 
-        String lambdaExpression = functionString.substring(separatorIndex + 1, functionString.length() - 1)
-                .replace("- >", "->")
-                .trim();
-
-        if (!parseLambda(lambdaExpression)) {
+        if (!parseLambda(lambdaHelper.splitLambda(lambdaExpression))) {
+            appendError("Lambda should have only variable name and expressions");
             return false;
         }
 
@@ -51,21 +48,18 @@ public class ReduceExecutor extends Executor<Double> {
         }
 
         String sequence = functionString.substring(0, separatorIndex).trim();
-        if (!handleVariable(sequence)) {
-            if (!handleMap(sequence)) {
-                if (!handleSequence(sequence)) {
-                    reset();
-                    return false;
-                }
-            }
+
+        if (handleVariable(sequence) || handleMap(sequence) || handleSequence(sequence)) {
+            String baseElement = functionString.substring(
+                    separatorIndex + 1
+            ).trim();
+
+            this.baseElement = calculator.calc(baseElement, numbersProvider);
+            return this.baseElement != null;
         }
 
-        String baseElement = functionString.substring(
-                separatorIndex + 1
-        ).trim();
-
-        this.baseElement = calculator.calc(baseElement, numbersProvider);
-        return this.baseElement != null;
+        reset();
+        return false;
     }
 
     @Override
@@ -81,20 +75,20 @@ public class ReduceExecutor extends Executor<Double> {
         executorService = Executors.newFixedThreadPool(THREADS_COUNT);
         int operationsCount = (sequence.length / THRESHOLD) + 1;
 
-        List<Callable<Double>> operations = new ArrayList<>(operationsCount);
+//        List<Callable<Double>> operations = new ArrayList<>(operationsCount);
+        List<Future<Double>> futures = new ArrayList<>(operationsCount);
         List<Double> results = new ArrayList<>();
 
         // Divide sequence to a few batches and reduce them asynchronously.
         for (int operationIndex = 0; operationIndex < operationsCount; operationIndex++) {
             final int index = operationIndex;
-            operations.add(() -> processBatch(index));
+//            operations.add(() -> processBatch(index));
+            futures.add(executorService.submit(() -> processBatch(index)));
         }
 
-        List<Future<Double>> futures = new ArrayList<>(operations.size());
-
-        for (Callable<Double> callable : operations) {
-            futures.add(executorService.submit(callable));
-        }
+//        for (Callable<Double> callable : operations) {
+//            futures.add(executorService.submit(callable));
+//        }
 
         for (Future<Double> future : futures) {
             try {
@@ -146,7 +140,7 @@ public class ReduceExecutor extends Executor<Double> {
         counter++;
 
         while (counter < limit) {
-            if (counter >= sequence.length) {
+            if (counter >= sequence.length || forceStop) {
                 return value;
             }
             variables.put(lambdaVariableNames[0], String.valueOf(value));
@@ -158,17 +152,7 @@ public class ReduceExecutor extends Executor<Double> {
         return value;
     }
 
-    private boolean parseLambda(String lambda) {
-        String[] lambdaTokens = lambda.split("->");
-
-        for (int i = 0; i < lambdaTokens.length; i++) {
-            lambdaTokens[i] = lambdaTokens[i].trim();
-        }
-
-        if (lambdaTokens.length != 2) {
-            appendError("Lambda should have only variable name and expressions");
-            return false;
-        }
+    private boolean parseLambda(String[] lambdaTokens) {
 
         this.lambdaVariableNames = new String[2];
 
@@ -188,23 +172,6 @@ public class ReduceExecutor extends Executor<Double> {
             }
         }
 
-        if (Validator.isValidLambdaExpression(calculator,
-                lambdaTokens[1],
-                lambdaVariableNames)
-        ) {
-            this.lambdaExpression = lambdaTokens[1];
-        } else {
-            appendError("Cannot read lambda expression");
-            return false;
-        }
-
-        return true;
-    }
-
-    @Override
-    public void reset() {
-        super.reset();
-        lambdaVariableNames = null;
-        lambdaExpression = null;
+        return setLambdaExpression(lambdaTokens[1]);
     }
 }
