@@ -28,12 +28,12 @@ public class MapExecutor extends Executor<double[]> {
         String lambdaExpression = lambdaHelper.extractLambdaFromFunctionString(functionString, separatorIndex);
 
         if (lambdaExpression == null) {
-            appendError("Reduce required 3 arguments: sequence, base value lambda");
+            appendError("Map required 2 arguments: sequence and lambda");
             return false;
         }
 
         if (!parseLambda(lambdaHelper.splitLambda(lambdaExpression))) {
-            appendError("Lambda should have only variable name and expressions");
+            appendError("Lambda should have only variable name and expression");
             return false;
         }
 

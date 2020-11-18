@@ -4,7 +4,7 @@ import function.executor.Executor;
 import tools.Constants;
 
 // Class for reading `map()` and `reduce()` functions.
-// T - is gneric parameter for function result. For `map()` it double[], for reduce it Double.
+// T - is generic parameter for function result. For `map()` it double[], for reduce it Double.
 public class FunctionReader<T> {
 
     private final StringBuilder functionStringReader = new StringBuilder();

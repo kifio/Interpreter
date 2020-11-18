@@ -30,7 +30,7 @@ public class Calculator {
     }
 
     // Calc arithmetic expression.
-    // first parameter is expression, second is provider of numbers for variables from expresion.
+    // first parameter is expression, second is provider of numbers for variables from expression.
     public Double calc(String expression, NumbersProvider numbersProvider) {
         String[] tokens = Formatter.getStringWithSpaces(expression.trim()).split(" +");
 
@@ -162,7 +162,7 @@ public class Calculator {
                     operands.push(a / b);
                     return true;
                 case Constants.POW:
-                    operands.push((double) Math.pow(a, b));
+                    operands.push(Math.pow(a, b));
                     return true;
                 default:
                     System.out.println("Unknown operator " + operator);

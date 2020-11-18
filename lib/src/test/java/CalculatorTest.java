@@ -7,9 +7,9 @@ import java.util.Collections;
 public class CalculatorTest {
 
     private static class TestData {
-        String expression;
-        String converted;
-        Double result;
+        final String expression;
+        final String converted;
+        final Double result;
 
         TestData(String expression, String converted, Double result) {
             this.expression = expression;

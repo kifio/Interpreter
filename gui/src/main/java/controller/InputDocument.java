@@ -1,39 +1,42 @@
 package controller;
 
-import java.util.concurrent.ExecutionException;
-
 import javax.swing.SwingWorker;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
 
+import controller.workers.HighlighterWorker;
+import controller.workers.InterpreterWorker;
 import interpreter.Interpreter;
 import model.Highlighter;
 
-import static model.Constants.INTERPRETATION;
+import java.util.Set;
 
-public class InputDocument extends DefaultStyledDocument {
+public class InputDocument extends DefaultStyledDocument implements OnCodeHighlightedListener {
 
     private final Highlighter highlighter;
-    private final OnProgramInterpretedListener listener;
+    private final OnProgramInterpretedListener programInterpretedListener;
     private SwingWorker<Interpreter.Output, Void> interpreterWorker;
+    private SwingWorker<Void, HighlighterWorker.Attributes> highlighterWorker;
     private Interpreter interpreter;
 
     public InputDocument(Highlighter highlighter, OnProgramInterpretedListener listener) {
         this.highlighter = highlighter;
-        this.listener = listener;
+        this.programInterpretedListener = listener;
     }
 
     public void insertString(int offset, String str, AttributeSet a) throws BadLocationException {
         super.insertString(offset, str, a);
         String text = getText(0, getLength());
-        highlightText(text);
+        highlightCode(text, offset);
         interpret(text);
     }
 
     public void remove(int offs, int len) throws BadLocationException {
         super.remove(offs, len);
-        interpret(getText(0, getLength()));
+        String text = getText(0, getLength());
+        highlightCode(text, offs);
+        interpret(text);
     }
 
     private void interpret(String program) {
@@ -41,61 +44,33 @@ public class InputDocument extends DefaultStyledDocument {
             interpreterWorker.cancel(true);
         }
 
-        listener.onStartInterpretation();
-        interpreterWorker = new SwingWorker<Interpreter.Output, Void>() {
+        if (interpreter != null) {
+            interpreter.stop();
+        }
 
-            @Override
-            public Interpreter.Output doInBackground() {
-                if (interpreter != null) {
-                    interpreter.stop();
-                }
+        interpreter = new Interpreter();
+        programInterpretedListener.onStartInterpretation();
 
-                interpreter = new Interpreter();
-                Interpreter.Output output = interpreter.interpret(program);
-
-                interpreter = null;
-                return output;
-            }
-
-            @Override
-            protected void done() {
-                super.done();
-                if (!isCancelled()) {
-                    try {
-                        listener.onProgramInterpreted(get());
-                    } catch (InterruptedException | ExecutionException e) {
-                        listener.onProgramInterpreted(new Interpreter.Output("", e.getMessage()));
-                        e.printStackTrace();
-                    }
-                }
-            }
-        };
-
+        interpreterWorker = new InterpreterWorker(interpreter, program, programInterpretedListener);
         interpreterWorker.execute();
     }
 
-    private void highlightText(String text) {
-        setCharacterAttributes(0, text.length(), highlighter.commonAttrs, false);
+    private void highlightCode(String program, final int offset) {
 
-        for (String word : highlighter.keyWords) {
-            highlightWord(word, text);
+        if (highlighterWorker != null) {
+            highlighterWorker.cancel(true);
         }
 
-        for (String word : highlighter.functions) {
-            highlightWord(word, text);
-        }
+        highlighterWorker = new HighlighterWorker(highlighter, program, offset, this);
+        highlighterWorker.execute();
     }
 
-    private void highlightWord(String word, String text) {
-        int searchIndex = 0;
-        while (true) {
-            searchIndex = text.indexOf(word, searchIndex);
-            if (searchIndex == -1) {
-                return;
-            }
+    @Override
+    public void onCodeHighlighted(Set<HighlighterWorker.Attributes> attributes, int from, int length) {
+        setCharacterAttributes(from, length, highlighter.commonAttrs, true);
 
-            setCharacterAttributes(searchIndex, word.length(), highlighter.getAttributeSetForToken(word), false);
-            searchIndex += word.length();
+        for (HighlighterWorker.Attributes attrs: attributes) {
+            setCharacterAttributes(attrs.start, attrs.length, attrs.attrs, false);
         }
     }
 }

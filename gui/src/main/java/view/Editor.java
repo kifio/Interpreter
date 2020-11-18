@@ -88,9 +88,7 @@ public class Editor extends JFrame {
         menuItem.getAccessibleContext()
                 .setAccessibleDescription(SAVE_OUTPUT_ITEM_DESCRIPTION);
 
-        menuItem.addActionListener(event -> {
-            outputController.saveToFile();
-        });
+        menuItem.addActionListener(event -> outputController.saveToFile());
 
         menu.add(menuItem);
 

@@ -33,7 +33,7 @@ public abstract class Executor<T> {
 
     boolean forceStop = false;
 
-    static ExecutorService executorService = Executors.newFixedThreadPool(THREADS_COUNT);
+    static final ExecutorService executorService = Executors.newFixedThreadPool(THREADS_COUNT);
 
     public Executor(Calculator calculator, SequencesProvider sequencesProvider, NumbersProvider numbersProvider) {
         this.calculator = calculator;

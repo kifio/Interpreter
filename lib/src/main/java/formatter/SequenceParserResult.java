@@ -5,5 +5,5 @@ import java.util.List;
 
 public class SequenceParserResult {
     public double[] sequence;
-    public List<String> errors = new ArrayList<>();
+    public final List<String> errors = new ArrayList<>();
 }

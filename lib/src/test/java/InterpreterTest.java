@@ -154,8 +154,8 @@ public class InterpreterTest {
     void testSequenceAndExpressionProgram() {
         String code =
                 "var seq = {1 + 2, 21} \n" +
-                        "var consts = 2.7 * 3.14\n" +
-                        "out consts";
+                        "var constants = 2.7 * 3.14\n" +
+                        "out constants";
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertTrue(interpreterOutput.output.startsWith("8.478"));
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
@@ -242,7 +242,7 @@ public class InterpreterTest {
                         "out squares";
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertEquals(Arrays.toString(new double[]{
-                1 * 3, 2 * 2 * 3, 3 * 3 * 3, 4 * 4 * 3, 5 * 5 * 3
+                3, 2 * 2 * 3, 3 * 3 * 3, 4 * 4 * 3, 5 * 5 * 3
         }), interpreterOutput.output);
         Assertions.assertTrue(interpreterOutput.errors.isEmpty());
     }
@@ -307,7 +307,7 @@ public class InterpreterTest {
     @Test
     void testInnerMap() {
         String code = "var seq = {1,3}\n" +
-                "var ddoubles = map(map(seq, i -> i + i), i -> i + i)\n" +
+                "var doubles = map(map(seq, i -> i + i), i -> i + i)\n" +
                 "out map(map(seq, i -> i + i), i -> i + i)\n";
         Interpreter.Output interpreterOutput = new Interpreter().interpret(code);
         Assertions.assertEquals(Arrays.toString(new double[]{

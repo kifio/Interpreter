@@ -6,10 +6,11 @@ import provider.SequencesProvider;
 import tools.Constants;
 import tools.Validator;
 
-import java.util.*;
-import java.util.concurrent.Callable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class ReduceExecutor extends Executor<Double> {
@@ -30,12 +31,12 @@ public class ReduceExecutor extends Executor<Double> {
         String lambdaExpression = lambdaHelper.extractLambdaFromFunctionString(functionString, separatorIndex);
 
         if (lambdaExpression == null) {
-            appendError("Reduce required 3 arguments: sequence, base value lambda");
+            appendError("Reduce required 3 arguments: sequence, base value, lambda");
             return false;
         }
 
         if (!parseLambda(lambdaHelper.splitLambda(lambdaExpression))) {
-            appendError("Lambda should have only variable name and expressions");
+            appendError("Lambda should have only variable names and expression");
             return false;
         }
 
@@ -72,23 +73,16 @@ public class ReduceExecutor extends Executor<Double> {
     }
 
     private Double computeAsync() {
-        executorService = Executors.newFixedThreadPool(THREADS_COUNT);
         int operationsCount = (sequence.length / THRESHOLD) + 1;
 
-//        List<Callable<Double>> operations = new ArrayList<>(operationsCount);
         List<Future<Double>> futures = new ArrayList<>(operationsCount);
         List<Double> results = new ArrayList<>();
 
         // Divide sequence to a few batches and reduce them asynchronously.
         for (int operationIndex = 0; operationIndex < operationsCount; operationIndex++) {
             final int index = operationIndex;
-//            operations.add(() -> processBatch(index));
             futures.add(executorService.submit(() -> processBatch(index)));
         }
-
-//        for (Callable<Double> callable : operations) {
-//            futures.add(executorService.submit(callable));
-//        }
 
         for (Future<Double> future : futures) {
             try {
@@ -118,7 +112,7 @@ public class ReduceExecutor extends Executor<Double> {
             variables.put(lambdaVariableNames[0], String.valueOf(value));
             variables.put(lambdaVariableNames[1], String.valueOf(sequence[counter]));
             value = calculator.calc(lambdaExpression, variables);
-        };
+        }
 
         variables.put(lambdaVariableNames[0], String.valueOf(baseElement));
         variables.put(lambdaVariableNames[1], String.valueOf(value));

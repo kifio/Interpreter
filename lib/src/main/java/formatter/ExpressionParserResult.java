@@ -5,5 +5,5 @@ import java.util.List;
 
 public class ExpressionParserResult {
     public String expression;
-    public List<String> errors = new ArrayList<>();
+    public final List<String> errors = new ArrayList<>();
 }

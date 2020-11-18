@@ -23,11 +23,6 @@ public class Interpreter {
 
         public final String errors;
 
-        public Output() {
-            this.output = "";
-            this.errors = "";
-        }
-
         public Output(String output, String errors) {
             this.output = output;
             this.errors = errors;
@@ -209,10 +204,10 @@ public class Interpreter {
             case READ_MAP:
                 return readMap(token);
             case PRINT_STRING_CONSTANT:
-                return addConstantToOutput(token);
+                currentStringConstant.append(token).append(Constants.SPACE);
+                return true;
             case READ_OUT:
-                currentOut.append(token);
-                currentOut.append(Constants.SPACE);
+                currentOut.append(token).append(Constants.SPACE);
                 return true;
             default:
                 return false;
@@ -264,11 +259,6 @@ public class Interpreter {
             errors.add("Sequence or number should be assigned to variable");
             return false;
         }
-    }
-
-    private boolean addConstantToOutput(String token) {
-        currentStringConstant.append(token).append(Constants.SPACE);
-        return true;
     }
 
     private boolean determineVariableType(String token) {

@@ -3,32 +3,31 @@ package tools;
 public interface Constants {
 
     // Keywords
-    public static final String VARIABLE = "var";
-    public static final String PRINT = "print";
-    public static final String OUT = "out";
+    String VARIABLE = "var";
+    String PRINT = "print";
+    String OUT = "out";
 
     // Functions
-    public static final String MAP = "map";
-    public static final String REDUCE = "reduce";
+    String MAP = "map";
+    String REDUCE = "reduce";
 
     // Separators
-    public static final String SPACE = " ";
-    public static final String NEW_LINE = "\n";
-    public static final String COMMA = ",";
+    String SPACE = " ";
+    String COMMA = ",";
 
     // Symbols
-    public static final String ASSIGN = "=";
-    public static final String START_SEQUENCE = "{";
-    public static final String END_SEQUENCE = "}";
-    public static final String PLUS = "+";
-    public static final String MINUS = "-";
-    public static final String MULTIPLY = "*";
-    public static final String DIVIDE = "/";
-    public static final String POW = "^";
-    public static final String OPENING_BRACKET = "(";
-    public static final String CLOSING_BRACKET = ")";
+    String ASSIGN = "=";
+    String START_SEQUENCE = "{";
+    String END_SEQUENCE = "}";
+    String PLUS = "+";
+    String MINUS = "-";
+    String MULTIPLY = "*";
+    String DIVIDE = "/";
+    String POW = "^";
+    String OPENING_BRACKET = "(";
+    String CLOSING_BRACKET = ")";
 
-    public static final String[] SYMBOLS = {
+    String[] SYMBOLS = {
             ASSIGN,
             START_SEQUENCE,
             END_SEQUENCE,
