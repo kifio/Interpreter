@@ -15,10 +15,13 @@ import java.util.concurrent.Executors;
 
 public abstract class Executor<T> {
 
+    private static final int THREADS_COUNT = 16;
+    static final ExecutorService executorService = Executors.newFixedThreadPool(THREADS_COUNT);
+
     // If sequence contains less items then threshold, it would be compute in the caller thread.
     // Else it would be done parallel.
     static final int THRESHOLD = 10000;
-    static final int THREADS_COUNT = 16;
+
 
     double[] sequence;
     public List<String> errors;
@@ -33,7 +36,6 @@ public abstract class Executor<T> {
 
     boolean forceStop = false;
 
-    static final ExecutorService executorService = Executors.newFixedThreadPool(THREADS_COUNT);
 
     public Executor(Calculator calculator, SequencesProvider sequencesProvider, NumbersProvider numbersProvider) {
         this.calculator = calculator;

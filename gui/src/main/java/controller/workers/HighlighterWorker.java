@@ -80,6 +80,10 @@ public class HighlighterWorker extends SwingWorker<Void, HighlighterWorker.Attri
     // Looking for a beginning of the changed line.
     // Colors for all previous lines should not be changed.
     private void setFromIndex(char[] chars) {
+        if (offset == chars.length) {
+            from = offset;
+        }
+
         for (int i = offset; i >= 0; i--) {
             if (i == 0) {
                 from = i;
