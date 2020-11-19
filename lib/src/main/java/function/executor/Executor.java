@@ -22,9 +22,8 @@ public abstract class Executor<T> {
     // Else it would be done parallel.
     static final int THRESHOLD = 10000;
 
-
     double[] sequence;
-    public List<String> errors;
+    public final List<String> errors = new ArrayList<>();
 
     final Calculator calculator;
     final SequencesProvider sequencesProvider;
@@ -35,7 +34,6 @@ public abstract class Executor<T> {
     String lambdaExpression;
 
     boolean forceStop = false;
-
 
     public Executor(Calculator calculator, SequencesProvider sequencesProvider, NumbersProvider numbersProvider) {
         this.calculator = calculator;
@@ -54,12 +52,6 @@ public abstract class Executor<T> {
     // For map, returns Sequence.
     // For reduce returns number.
     public abstract T compute();
-
-    public void reset() {
-        sequence = null;
-        lambdaExpression = null;
-        lambdaVariableNames = null;
-    }
 
     public void stop() {
         this.forceStop = true;
@@ -127,10 +119,6 @@ public abstract class Executor<T> {
     }
 
     void appendError(String error) {
-        if (errors == null) {
-            errors = new ArrayList<>();
-        }
-
         errors.add(error);
     }
 }

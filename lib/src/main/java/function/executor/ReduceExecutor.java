@@ -57,10 +57,9 @@ public class ReduceExecutor extends Executor<Double> {
 
             this.baseElement = calculator.calc(baseElement, numbersProvider);
             return this.baseElement != null;
+        } else {
+            return false;
         }
-
-        reset();
-        return false;
     }
 
     @Override
@@ -147,6 +146,11 @@ public class ReduceExecutor extends Executor<Double> {
     }
 
     private boolean parseLambda(String[] lambdaTokens) {
+
+        if (lambdaTokens == null) {
+            appendError("Invalid lambda expression");
+            return false;
+        }
 
         this.lambdaVariableNames = new String[2];
 

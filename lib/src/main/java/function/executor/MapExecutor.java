@@ -39,12 +39,7 @@ public class MapExecutor extends Executor<double[]> {
 
         String sequence = functionString.substring(1, separatorIndex).trim();
 
-        if (handleVariable(sequence) || handleMap(sequence) || handleSequence(sequence)) {
-            return true;
-        }
-
-        reset();
-        return false;
+        return handleVariable(sequence) || handleMap(sequence) || handleSequence(sequence);
     }
 
     @Override
@@ -98,13 +93,9 @@ public class MapExecutor extends Executor<double[]> {
         Map<String, String> variables = new HashMap<>();
 
         for (int i = 0; i < THRESHOLD; i++) {
-            if (forceStop) {
-                return;
-            }
-
             final int itemIndex = i + (THRESHOLD * operationIndex);
 
-            if (itemIndex >= sequence.length) {
+            if (itemIndex >= sequence.length || forceStop) {
                 return;
             }
 
@@ -122,7 +113,7 @@ public class MapExecutor extends Executor<double[]> {
 
     private boolean parseLambda(String[] lambdaTokens) {
 
-        if (Validator.isNameAvailable(lambdaTokens[0])) {
+        if (lambdaTokens != null && Validator.isNameAvailable(lambdaTokens[0])) {
             this.lambdaVariableNames = new String[1];
             this.lambdaVariableNames[0] = lambdaTokens[0];
         } else {

@@ -99,7 +99,13 @@ public class Editor extends JFrame {
 
     private void addInput() {
         JEditorPane input = new JTextPane(new InputDocument(highlighter, listener));
-        input.setText(CODE_PLACEHOLDER);
+        StringBuilder sb = new StringBuilder();
+        sb.append("var n = 1\n");
+        for (int i = 0; i < 15000; i++) {
+            sb.append("var n = n + 1\n");
+        }
+        sb.append("out n");
+        input.setText(sb.toString());
         addEditorPane(input,
                 getContentPane(),
                 BorderFactory.createMatteBorder(0, 0, 1, 0, Colors.BACKGROUND),

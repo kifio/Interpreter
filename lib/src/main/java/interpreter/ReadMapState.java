@@ -26,6 +26,7 @@ public class ReadMapState extends State {
             interpreter.mapReader.reset();
             return true;
         } else {
+            interpreter.errors.addAll(interpreter.mapReader.executor.errors);
             interpreter.mapReader.reset();
             return false;
         }

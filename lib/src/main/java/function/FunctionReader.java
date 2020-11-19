@@ -64,6 +64,5 @@ public class FunctionReader<T> {
     public void reset() {
         functionStringReader.setLength(0);
         bracketsPairsNumber = -1;
-        executor.reset();
     }
 }
